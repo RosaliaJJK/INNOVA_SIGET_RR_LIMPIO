@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Recuperar Contraseña - INNOVA SIGET</title>
+    <link rel="stylesheet" href="/Style.css" />
+
+    <style>
+        body {
+            background: #f6f5f7;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            font-family: 'Montserrat', sans-serif;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container-reset {
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 14px 28px rgba(0,0,0,0.25),
+                        0 10px 10px rgba(0,0,0,0.22);
+            width: 450px;
+            max-width: 100%;
+            min-height: 480px;
+            padding: 40px;
+            text-align: center;
+        }
+
+        form {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        img {
+            width: 130px;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            color: #1a365d;
+            margin-bottom: 10px;
+        }
+
+        p {
+            font-size: 14px;
+            color: #718096;
+            margin-bottom: 25px;
+        }
+
+        input {
+            background-color: #eee;
+            border: none;
+            padding: 12px 15px;
+            margin: 8px 0;
+            width: 100%;
+            border-radius: 5px;
+        }
+
+        button {
+            border-radius: 20px;
+            border: 1px solid #185a9d;
+            background-color: #185a9d;
+            color: #fff;
+            font-size: 12px;
+            font-weight: bold;
+            padding: 12px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            cursor: pointer;
+            margin-top: 15px;
+            width: 100%;
+        }
+
+        button:active {
+            transform: scale(0.97);
+        }
+
+        .back-link {
+            color: #185a9d;
+            font-size: 14px;
+            text-decoration: none;
+            margin-top: 30px;
+            font-weight: 600;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .msg {
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .error {
+            color: #e53e3e;
+        }
+
+        .success {
+            color: #38a169;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container-reset">
+
+    <form action="/auth/recuperar" method="POST">
+        
+        <img src="/Logo.jpg" alt="TESCHI LOGO">
+
+        <h2>¿Olvidaste tu contraseña?</h2>
+
+        <p>
+            Ingresa tu correo institucional registrado.
+            Te enviaremos un enlace para restablecer tu acceso.
+        </p>
+
+        <% if (typeof error !== "undefined" && error) { %>
+            <div class="msg error"><%= error %></div>
+        <% } %>
+
+        <% if (typeof success !== "undefined" && success) { %>
+            <div class="msg success"><%= success %></div>
+        <% } %>
+
+        <input
+            type="email"
+            name="email"
+            placeholder="ejemplo@teschi.edu.mx"
+            required
+        >
+
+        <button type="submit">
+            Enviar instrucciones
+        </button>
+
+        <a href="/" class="back-link">
+            ← Volver a iniciar sesión
+        </a>
+
+    </form>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,248 @@
+/* Restablece márgenes y rellenos, fuente básica */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Arial', sans-serif;
+}
+
+/* Fondo gris claro con centrado vertical y horizontal */
+body {
+  background: #4a90e2; /* Azul */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+/* Contenedor principal: tamaño fijo, posición relativa para animación */
+.container {
+  background: #fff;
+  border-radius: 10px;
+  width: 768px;
+  max-width: 100%;
+  min-height: 480px;
+  box-shadow: 0 14px 28px rgba(0,0,0,0.25),
+              0 10px 10px rgba(0,0,0,0.22);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Formularios de registro y login lado a lado */
+.form-container {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  transition: all 0.6s ease-in-out;
+  padding: 50px;
+  background: #fff;
+  width: 50%;
+  box-sizing: border-box;
+
+  /* centramos los formularios sin alterar el diseño */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Registro a la izquierda inicialmente */
+.sign-up-container {
+  left: 0;
+  opacity: 0;
+  z-index: 1;
+}
+
+/* Login a la derecha inicialmente */
+.sign-in-container {
+  left: 0;
+  z-index: 2;
+} 
+
+/* Cuando está activo, muestra registro a la derecha */
+.container.right-panel-active .sign-up-container {
+  transform: translateX(100%);
+  opacity: 1;
+  z-index: 5;
+  transition-delay: 0.3s;
+}
+
+/* Login se mueve fuera al salir registro */
+.container.right-panel-active .sign-in-container {
+  transform: translateX(100%);
+  opacity: 0;
+  z-index: 1;
+  transition-delay: 0s;
+}
+
+/* Inputs de texto y contraseña */
+input {
+  background: #eee;
+  border: none;
+  padding: 12px 15px;
+  margin: 8px 0;
+  width: 100%;
+  border-radius: 5px;
+  font-size: 14px;
+}
+
+/* Botones principales */
+button {
+  border-radius: 20px;
+  border: none;
+  background-color: #20c997; /* Verde visible */
+  color: #fff;
+  font-size: 14px;
+  font-weight: bold;
+  padding: 12px 45px;
+  margin-top: 10px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+/* Cambio de color en hover */
+button:hover {
+  background-color: #17a589;
+}
+
+/* Enlaces para "¿Olvidaste tu contraseña?" */
+form a {
+  color: #333;
+  font-size: 12px;
+  text-decoration: none;
+  margin-top: 10px;
+  display: inline-block;
+}
+
+/* Contenedor de overlay para mensajes y botones */
+.overlay-container {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 50%;
+  height: 100%;
+  overflow: hidden;
+  transition: transform 0.6s ease-in-out;
+  z-index: 100;
+  border-top-right-radius: 10px;
+  border-bottom-right-radius: 10px;
+}
+
+/* Desplaza overlay cuando se cambia panel */
+.container.right-panel-active .overlay-container{
+  transform: translateX(-100%);
+}
+
+/* Overlay general con fondo verde degradado */
+.overlay {
+  background: linear-gradient(to right, #43cea2, #185a9d);
+  color: #fff;
+  position: relative;
+  left: -100%;
+  height: 100%;
+  width: 200%;
+  transform: translateX(0);
+  transition: transform 0.6s ease-in-out;
+  border-radius: 10px;
+}
+
+/* Mueve overlay en estado activo */
+.container.right-panel-active .overlay {
+  transform: translateX(50%);
+}
+
+/* Paneles dentro del overlay */
+.overlay-panel {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 0 40px;
+  top: 0;
+  height: 100%;
+  width: 50%;
+  text-align: center;
+}
+
+/* Panel izquierda en overlay */
+.overlay-left {
+  transform: none !important;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+/* Panel derecha en overlay */
+.overlay-right {
+  right: 0;
+  transform: translateX(0);
+}
+
+/* Texto grande en paneles */
+h1 {
+  font-weight: bold;
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+}
+
+/* Texto pequeño en paneles */
+p {
+  font-size: 1rem;
+  margin-bottom: 20px;
+}
+
+/* Botones "ghost" sin fondo para overlay */
+button.ghost {
+  background-color: transparent;
+  border: 2px solid white;
+  color: white;
+  font-weight: bold;
+  padding: 12px 45px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Cambio en hover para botón ghost */
+button.ghost:hover {
+  background-color: white;
+  color: #43cea2;
+}
+
+img{
+	max-whidth: 100%;
+	display: block;
+	margin: -17px auto 0 30px;
+}
+
+.registration-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 24px;
+    margin-top: 20px;
+}
+
+.panel-left {
+    display: flex;
+    flex-direction: column;
+}
+
+.panel-right {
+    background: #e6f7ec;
+    border-left: 6px solid #22c55e;
+}
+
+.btn-group {
+    display: flex;
+    gap: 12px;
+    margin-top: 15px;
+}
+
+textarea {
+    min-height: 90px;
+    resize: vertical;
+}

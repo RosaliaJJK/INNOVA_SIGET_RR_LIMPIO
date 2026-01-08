@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soporte Técnico - Personal TESCHI</title>
+
+    <!-- ICONOS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; }
+        body {
+            background: #f4f7f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .form-card {
+            background: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 900px;
+            padding: 40px;
+        }
+
+        /* ===== HEADER ===== */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 1px solid #edf2f7;
+            padding-bottom: 15px;
+        }
+
+        .header h2 {
+            color: #185a9d;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        /* ===== ENGRANE (IGUAL A DOCENTE) ===== */
+        .icon-group { position: relative; }
+
+        #cogButton {
+            background: none;
+            border: none;
+            color: #185a9d;
+            font-size: 22px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        #cogButton:hover {
+            transform: rotate(90deg);
+            color: #1a365d;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 40px;
+            background: #ffffff;
+            min-width: 260px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            z-index: 9999;
+            padding: 6px;
+            border: 1px solid #f0f0f0;
+        }
+
+        .dropdown-content button,
+        .dropdown-content a {
+            width: 100%;
+            padding: 12px 16px;
+            border: none;
+            background: none;
+            text-align: left;
+            cursor: pointer;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #334155;
+            text-decoration: none;
+            font-weight: 700;
+            border-radius: 12px;
+            transition: background 0.2s ease, transform 0.2s ease;
+        }
+
+        .dropdown-content button:hover,
+        .dropdown-content a:hover {
+            background: #f1f5f9;
+            transform: scale(1.02);
+            color: #1a365d;
+        }
+
+        .dropdown-content hr {
+            margin: 6px 0;
+            border: none;
+            border-top: 1px solid #eee;
+        }
+
+        .logout i { color: #dc2626; }
+        .logout span { text-decoration: underline; }
+
+        /* ===== FORMULARIO ===== */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            color: #185a9d;
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #edf2f7;
+            padding-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .form-group { margin-bottom: 15px; }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 8px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            background: #fcfcfc;
+        }
+
+        textarea { resize: none; min-height: 110px; }
+
+        .action-btns {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn-submit {
+            flex: 2;
+            background: #20c997;
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 30px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .btn-update {
+            flex: 1;
+            background: white;
+            color: #185a9d;
+            border: 2px solid #185a9d;
+            padding: 15px;
+            border-radius: 30px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .form-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="form-card">
+
+    <!-- HEADER -->
+    <header class="header">
+        <h2>Solicitud de Soporte Técnico</h2>
+
+        <div class="icon-group">
+            <button id="cogButton">
+                <i class="fa-solid fa-gear"></i>
+            </button>
+
+            <div class="dropdown-content" id="settingsMenu">
+                <button onclick="reportUI()">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span>Reportar Problema</span>
+                </button>
+
+                <button onclick="checkSystem()">
+                    <i class="fa-solid fa-circle-info"></i>
+                    <span>Estado del Sistema</span>
+                </button>
+
+                <hr>
+
+                <a href="/logout" class="logout">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <span>Cerrar Sesión</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- FORM -->
+    <form action="/enviar-soporte-personal" method="POST">
+        <div class="form-grid">
+
+            <section>
+                <h3 class="section-title">Información del Solicitante</h3>
+
+                <label>Nombre del Personal</label>
+                <input value="<%= user.nombre %>" readonly style="background:#edf2f7">
+
+                <label>Correo Institucional</label>
+                <input value="<%= user.email %>" readonly style="background:#edf2f7">
+
+                <label>Área o Departamento</label>
+                <select name="area" required>
+                    <option disabled selected>Seleccione área...</option>
+                    <option>Sistemas - Edificio J</option>
+                    <option>Control Escolar</option>
+                    <option>Recursos Humanos</option>
+                    <option>Dirección General</option>
+                    <option>Laboratorios Pesados</option>
+                    <option>Biblioteca</option>
+                </select>
+
+                <label>Descripción de la Falla</label>
+                <textarea name="descripcion" required></textarea>
+            </section>
+
+            <section>
+                <h3 class="section-title">Detalles de la Incidencia</h3>
+
+                <label>Tipo de Problema</label>
+                <select name="tipo_incidencia" required>
+                    <option disabled selected>Seleccione...</option>
+                    <option>Hardware</option>
+                    <option>Software</option>
+                    <option>Red</option>
+                    <option>Otro</option>
+                </select>
+
+                <label>Prioridad</label>
+                <select name="prioridad" required>
+                    <option>Baja</option>
+                    <option selected>Media</option>
+                    <option>Alta</option>
+                </select>
+
+                <label>Tipo de Atención</label>
+                <select name="tipo_atencion" required>
+                    <option>Presencial</option>
+                    <option>Remoto</option>
+                </select>
+
+                <label>Fecha sugerida</label>
+                <input type="date" name="fecha_cita" id="fecha_cita" required>
+
+                <label>Turno</label>
+                <select name="turno" required>
+                    <option>Matutino</option>
+                    <option>Vespertino</option>
+                </select>
+            </section>
+
+        </div>
+
+        <div class="action-btns">
+            <button class="btn-submit">Generar Ticket</button>
+            <button type="button" class="btn-update" onclick="location.reload()">
+                <i class="fas fa-sync-alt"></i> Limpiar
+            </button>
+        </div>
+    </form>
+
+</div>
+
+<script>
+    const cogButton = document.getElementById("cogButton");
+    const menu = document.getElementById("settingsMenu");
+
+    cogButton.onclick = (e) => {
+        e.stopPropagation();
+        menu.style.display = menu.style.display === "block" ? "none" : "block";
+    };
+
+    document.onclick = () => menu.style.display = "none";
+
+    async function checkSystem() {
+        const res = await fetch('/api/estado-sistema');
+        const data = await res.json();
+        alert(`Sistema: ${data.status}\nBD: ${data.database}`);
+    }
+
+    function reportUI() {
+        prompt("Describe el problema:");
+        alert("Reporte enviado.");
+    }
+
+    document.getElementById("fecha_cita").min =
+        new Date().toISOString().split("T")[0];
+</script>
+
+</body>
+</html>

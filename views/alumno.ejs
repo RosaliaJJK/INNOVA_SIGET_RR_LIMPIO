@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Laboratorio - Registro</title>
+
+    <!-- FONT AWESOME -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <!-- CSS PRINCIPAL -->
+    <link rel="stylesheet" href="/Style1.css">
+
+    <!-- ESTILOS DEL ENGRANE -->
+    <style>
+        .icon-group {
+            position: relative;
+        }
+
+        #cogButton {
+            background: none;
+            border: none;
+            font-size: 22px;
+            cursor: pointer;
+            color: var(--teschi-blue);
+        }
+
+        #cogButton:hover {
+            transform: rotate(90deg);
+            transition: 0.3s;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 40px;
+            background: #ffffff;
+            min-width: 230px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            z-index: 9999;
+            overflow: hidden;
+        }
+
+        .dropdown-content button,
+        .dropdown-content a {
+            width: 100%;
+            padding: 13px 16px;
+            border: none;
+            background: none;
+            text-align: left;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #1f2937;
+        }
+
+        .dropdown-content i {
+            width: 18px;
+            text-align: center;
+            font-size: 15px;
+            color: #1f2937;
+        }
+
+        .dropdown-content button:hover,
+        .dropdown-content a:hover {
+            background: #f3f4f6;
+        }
+
+        .dropdown-content hr {
+            margin: 0;
+            border: none;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .logout {
+            color: #dc2626;
+            font-weight: 500;
+        }
+
+        .logout i {
+            color: #dc2626;
+        }
+
+        .disabled {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+    </style>
+</head>
+
+
+
+
+<body>
+
+<div class="student-form-wrapper">
+
+    <!-- HEADER -->
+    <div class="dashboard-header">
+        <h2>Registro de Acceso</h2>
+
+        <!-- ⚙️ ENGRANE -->
+        <div class="icon-group">
+            <button id="cogButton" type="button" aria-label="Opciones">
+                <i class="fa-solid fa-gear"></i>
+            </button>
+
+            <div class="dropdown-content" id="settingsMenu">
+
+                <button type="button" onclick="reportProblem()">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span>Reportar Problema</span>
+                </button>
+
+                <button type="button" onclick="checkSystemStatus()">
+                    <i class="fa-solid fa-circle-info"></i>
+                    <span>Estado del Sistema</span>
+                </button>
+
+                <hr>
+
+                <a href="/auth/logout" class="logout">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <span>Cerrar Sesión</span>
+                </a>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- FORMULARIO -->
+     <div id="bitacora" class="disabled"></div>
+        <form id="form-registro" method="POST">
+            
+            <label>Laboratorio</label>
+            <h3 class="section-title">1. Verificación</h3>
+            <select id="zona" required>
+                <option value="">Seleccione laboratorio</option>
+            </select>
+
+<!--
+            <h3 class="section-title">1. Verificación</h3>
+            <label for="zona">Laboratorio</label>
+
+            <select id="zona" required>
+            <option value="">Seleccione laboratorio</option>
+            </select>-->
+
+            <label for="studentCareer">Carrera</label>
+            <select id="selectCarrera" name="studentCareer" required></select>
+
+            <label for="studentGroup">Grupo</label>
+            <select id="selectGrupo" name="studentGroup" required></select>
+
+
+            <div id="statusMessage" class="status-disabled">
+                Seleccione sus datos para verificar acceso.
+            </div>
+
+            <h3 class="section-title" id="machineTitle" style="display:none;">
+                2. Datos de Bitácora
+            </h3>
+
+                    <div id="registrationContent" class="registration-grid">
+
+                        <!-- COLUMNA IZQUIERDA -->
+                        <div class="panel panel-left">
+                            <h4>Detalles del Usuario</h4>
+
+                            <label>Nombre Completo</label>
+                            <input type="text" readonly value="<%= user.nombre %>">
+
+                            <label>Matrícula / ID</label>
+                            <input type="text" id="matricula" readonly value="<%= user.email.split('@')[0] %>">
+
+                            <label for="machineNumber">Número de Equipo</label>
+                            <select id="machineNumber" required>
+                            <option value="">Seleccione equipo</option>
+                            </select>
+
+                            <!--
+                            <select id="machineNumber" name="machineNumber" required>
+                                <option value="">Seleccione equipo</option>
+                            </select>-->
+
+                            <!--
+                            <label for="observation">Observaciones</label>
+                            <textarea id="observation" name="observation"></textarea>-->
+
+                            <label>Observaciones</label>
+                            <textarea id="observation" placeholder="Observaciones..."></textarea>
+
+
+
+                            <!-- BOTONES ABAJO 
+                            <div class="btn-group">
+                                <button type="submit" id="registerButton" disabled>
+                                    REGISTRAR ENTRADA
+                                </button>-->
+
+                            <button id="registerButton" class="btn-primary" disabled>
+                                REGISTRAR ENTRADA
+                            </button>
+
+                                <button type="button" class="btn-update" onclick="checkAccess()">
+                                    Actualizar
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- COLUMNA DERECHA -->
+                        <div class="panel panel-right">
+                            <h4>Información de la Sesión</h4>
+
+                            <div class="info-box">
+                                Laboratorio:
+                                <strong id="labInfo">---</strong>
+                            </div>
+
+                            <div class="info-box">
+                                Docente:
+                                <strong id="docenteInfo">---</strong>
+                            </div>
+                        </div>
+
+                    </div>
+
+
+                </div>
+
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/alumno.js"></script>
+
+<!--
+    <script>
+        const socket = io();
+        const bitacora = document.getElementById("registrationContent");
+        const btn = document.getElementById("registerButton");
+
+        socket.on("estado_clase", data => {
+        if (data.activa) {
+            bitacora.classList.remove("disabled");
+            btn.disabled = false;
+        } else {
+            bitacora.classList.add("disabled");
+            btn.disabled = true;
+        }
+        });
+
+        socket.on("clase_habilitada", () => {
+            bitacora.classList.remove("disabled");
+            btn.disabled = false;
+        });
+
+        socket.on("clase_cerrada", () => {
+        bitacora.classList.add("disabled");
+            btn.disabled = true;
+        });
+    </script>
+
+-->
+</body>
+</html>

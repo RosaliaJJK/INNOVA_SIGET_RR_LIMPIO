@@ -1,0 +1,26 @@
+<!-- JS -->
+▼<!-- Codigo de alumno .js
+    <script>
+    const cogButton = document.getElementById("cogButton");
+    const menu = document.getElementById("settingsMenu");
+
+    cogButton.addEventListener("click", (e) => {
+        e.stopPropagation();
+        menu.style.display = menu.style.display === "block" ? "none" : "block";
+    });
+
+    document.addEventListener("click", () => {
+        menu.style.display = "none";
+    });
+
+    function reportProblem() {
+        window.location.href = "/reportar-problema";
+    }
+
+    function checkSystemStatus() {
+        window.location.href = "/estado-sistema";
+    }
+</script>
+
+-->
+

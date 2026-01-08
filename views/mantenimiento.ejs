@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dashboard Técnico - Gestión de Soporte</title>
+
+    <!-- ICONOS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: #f6f5f7; display: flex; justify-content: center; min-height: 100vh; padding: 30px 15px; }
+
+        .form-wrapper {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 1200px;
+            padding: 40px;
+        }
+
+        /* ===== HEADER ===== */
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 1px solid #edf2f7;
+            padding-bottom: 15px;
+        }
+
+        .dashboard-header h2 {
+            color: #185a9d;
+            font-size: 24px;
+        }
+
+        .user-badge {
+            font-size: 13px;
+            color: #6c757d;
+        }
+
+        /* ===== ENGRANE UNIFICADO ===== */
+        .icon-group { position: relative; }
+
+        #cogButton {
+            background: none;
+            border: none;
+            color: #185a9d;
+            font-size: 22px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        #cogButton:hover {
+            transform: rotate(90deg);
+            color: #1a365d;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 40px;
+            background: #fff;
+            min-width: 260px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            z-index: 9999;
+            padding: 6px;
+            border: 1px solid #f0f0f0;
+        }
+
+        .dropdown-content button,
+        .dropdown-content a {
+            width: 100%;
+            padding: 12px 16px;
+            border: none;
+            background: none;
+            text-align: left;
+            cursor: pointer;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #334155;
+            text-decoration: none;
+            font-weight: 700;
+            border-radius: 12px;
+            transition: background 0.2s ease, transform 0.2s ease;
+        }
+
+        .dropdown-content button:hover,
+        .dropdown-content a:hover {
+            background: #f1f5f9;
+            transform: scale(1.02);
+            color: #1a365d;
+        }
+
+        .dropdown-content hr {
+            margin: 6px 0;
+            border: none;
+            border-top: 1px solid #eee;
+        }
+
+        .logout i { color: #dc2626; }
+
+        /* ===== CONTENIDO ===== */
+        .form-content { display: flex; gap: 30px; }
+        .management-panel { flex: 2; }
+        .configuration-panel { flex: 1; }
+
+        .panel-header {
+            color: #185a9d;
+            font-size: 1.1em;
+            margin-bottom: 15px;
+            font-weight: 700;
+            border-bottom: 2px solid #185a9d;
+            padding-bottom: 5px;
+        }
+
+        .performance-card {
+            background-color: #e6f7ff;
+            border-left: 5px solid #185a9d;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 25px;
+        }
+
+        .filter-bar { display: flex; gap: 10px; margin-bottom: 15px; }
+        .filter-bar select {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        /* ===== TABLA ===== */
+        .table-container {
+            overflow-x: auto;
+            background: #fff;
+            border-radius: 8px;
+            border: 1px solid #eee;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9em;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            padding: 12px;
+            text-align: left;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+
+        tbody tr:hover {
+            background-color: #f1f8ff;
+            cursor: pointer;
+        }
+
+        /* ===== FORM ===== */
+        .control-group { margin-bottom: 15px; }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            font-size: 0.9em;
+            color: #555;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+
+        .inline-fields { display: flex; gap: 10px; }
+
+        .btn {
+            border: none;
+            border-radius: 6px;
+            padding: 10px 15px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+        }
+
+        .btn-primary { background: #20c997; color: white; }
+        .btn-secondary { background: #185a9d; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-outline { background: transparent; border: 2px solid #185a9d; color: #185a9d; }
+
+        @media (max-width: 1024px) {
+            .form-content { flex-direction: column; }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="form-wrapper">
+
+    <!-- HEADER -->
+    <header class="dashboard-header">
+        <div>
+            <h2>🛠️ Dashboard Técnico</h2>
+            <span class="user-badge">
+                Técnico: <strong><%= user.nombre %></strong>
+            </span>
+        </div>
+
+        <div class="icon-group">
+            <button id="cogButton">
+                <i class="fa-solid fa-gear"></i>
+            </button>
+
+            <div class="dropdown-content" id="settingsMenu">
+                <button onclick="navAction('reportar')">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    Reportar Problema
+                </button>
+
+                <button onclick="navAction('estado')">
+                    <i class="fa-solid fa-circle-info"></i>
+                    Estado del Sistema
+                </button>
+
+                <button onclick="navAction('soluciones')">
+                    <i class="fa-solid fa-book"></i>
+                    Catálogo de Soluciones
+                </button>
+
+                <hr>
+
+                <a href="/logout" class="logout">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    Cerrar Sesión
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- CONTENIDO -->
+    <div class="form-content">
+
+        <!-- PANEL PRINCIPAL -->
+        <main class="management-panel">
+            <h3 class="panel-header">Incidencias Recientes</h3>
+
+            <div class="filter-bar">
+                <select><option>Todas las prioridades</option></select>
+                <select><option>Todos los estados</option></select>
+                <select><option>Todas las áreas</option></select>
+            </div>
+
+            <div class="inline-fields" style="margin-bottom:15px;">
+                <button class="btn btn-primary" onclick="loadData()">
+                    <i class="fas fa-sync-alt"></i> Actualizar
+                </button>
+                <button class="btn btn-danger">
+                    <i class="fas fa-trash-alt"></i> Eliminar
+                </button>
+            </div>
+
+            <div class="table-container">
+                <table id="incidencesTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Solicitante</th>
+                            <th>Área</th>
+                            <th>Problema</th>
+                            <th>Prioridad</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <tr>
+                            <td colspan="6" style="text-align:center; padding:30px; color:#999;">
+                                Esperando datos del sistema...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <button class="btn btn-secondary" style="margin-top:20px;">
+                <i class="fas fa-file-pdf"></i> Exportar PDF
+            </button>
+        </main>
+
+        <!-- PANEL LATERAL -->
+        <aside class="configuration-panel">
+
+            <div class="performance-card">
+                <h4>📊 Resumen de Hoy</h4>
+                <p>Pendientes: <span id="countAssigned">0</span></p>
+                <p>Resueltas: <span id="countResolved">0</span></p>
+            </div>
+
+            <h3 class="panel-header">Configurar Disponibilidad</h3>
+            <form>
+                <label>Fecha</label>
+                <input type="date" required>
+
+                <div class="inline-fields">
+                    <div>
+                        <label>Hora Inicio</label>
+                        <input type="time" required>
+                    </div>
+                    <div>
+                        <label>Hora Fin</label>
+                        <input type="time" required>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" style="margin-top:10px;">
+                    Publicar Horario
+                </button>
+            </form>
+
+            <h3 class="panel-header" style="margin-top:25px;">
+                Gestión de Estado
+            </h3>
+
+            <form>
+                <label>ID Incidencia</label>
+                <input type="text" readonly>
+
+                <label>Nuevo Estado</label>
+                <select required>
+                    <option>Asignado</option>
+                    <option>Resuelto</option>
+                    <option>Cerrado</option>
+                </select>
+
+                <button class="btn btn-secondary" style="margin-top:10px;">
+                    Actualizar Estado
+                </button>
+            </form>
+
+        </aside>
+
+    </div>
+</div>
+
+<script>
+    const cogButton = document.getElementById("cogButton");
+    const menu = document.getElementById("settingsMenu");
+
+    cogButton.onclick = (e) => {
+        e.stopPropagation();
+        menu.style.display = menu.style.display === "block" ? "none" : "block";
+    };
+
+    document.onclick = () => menu.style.display = "none";
+
+    function navAction(action) {
+        menu.style.display = "none";
+        console.log("Acción:", action);
+    }
+
+    function loadData() {
+        console.log("Conectando con el servidor...");
+    }
+</script>
+
+</body>
+</html>

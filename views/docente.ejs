@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Laboratorio - Panel Docente</title>
+
+    <!-- ICONOS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <style>
+        /* =======================
+           ESTILOS BASE
+        ======================== */
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; }
+        body { background: #f4f7f9; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+
+        .dashboard-card {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 1150px;
+            padding: 35px;
+            position: relative;
+        }
+
+        /* =======================
+           HEADER
+        ======================== */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 1px solid #edf2f7;
+            padding-bottom: 15px;
+        }
+
+        .header h2 {
+            color: #1a365d;
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        /* =======================
+           ICONOS HEADER
+        ======================== */
+        .icon-group { position: relative; }
+
+        #cogButton, .btn-soporte {
+            background: none;
+            border: none;
+            color: #3182ce;
+            font-size: 22px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        #cogButton:hover { transform: rotate(90deg); color: #2c5282; }
+        .btn-soporte:hover { transform: scale(1.2); color: #2c5282; }
+
+        /* =======================
+           MENU DESPLEGABLE
+        ======================== */
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 40px;
+            background: #ffffff;
+            min-width: 260px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            z-index: 9999;
+            padding: 6px;
+            border: 1px solid #f0f0f0;
+        }
+
+        .dropdown-content button,
+        .dropdown-content a {
+            width: 100%;
+            padding: 12px 16px;
+            border: none;
+            background: none;
+            text-align: left;
+            cursor: pointer;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #334155;
+            text-decoration: none;
+            font-weight: 700;
+            border-radius: 12px;
+            transition: background 0.2s ease, transform 0.2s ease;
+        }
+
+        .dropdown-content button:hover {
+            background: #f1f5f9;
+            transform: scale(1.02);
+            color: #1a365d;
+        }
+
+        .logout {
+            color: #000 !important;
+            font-weight: 400 !important;
+        }
+
+        .logout span { text-decoration: underline; }
+        .logout i { color: #dc2626; }
+
+        .dropdown-content hr {
+            margin: 6px 0;
+            border: none;
+            border-top: 1px solid #eee;
+        }
+
+        /* =======================
+           CONTENIDO
+        ======================== */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.4fr;
+            gap: 40px;
+        }
+
+        .section-title {
+            color: #2d3748;
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #20c997;
+            padding-bottom: 8px;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #718096;
+            margin-bottom: 8px;
+        }
+
+        .docente-badge {
+            color: #3182ce;
+            font-weight: 700;
+            font-size: 15px;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 11px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            background: #fcfcfc;
+        }
+
+        .btn-primary {
+            background: #20c997;
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            width: 62%;
+        }
+
+        .btn-save {
+            background: white;
+            color: #3182ce;
+            border: 1px solid #3182ce;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            width: 35%;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* =======================
+           TABLA
+        ======================== */
+        .table-container {
+            background: #fff;
+            border: 1px solid #edf2f7;
+            border-radius: 8px;
+            overflow: hidden;
+            min-height: 400px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        th {
+            background: #f8fafc;
+            padding: 15px 12px;
+            text-align: left;
+            color: #64748b;
+            border-bottom: 1px solid #edf2f7;
+        }
+
+        td {
+            padding: 15px 12px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .dot {
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+                display: inline-block;
+                }
+                .green { background: #48bb78; }
+                .red { background: #e53e3e; }
+
+        .monitor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .estado {
+            display: flex;
+            align-items: center;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .estado .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+
+        /* Estados */
+        .estado.activo .dot {
+            background-color: #22c55e;
+        }
+
+        .estado.activo .texto {
+            color: #22c55e;
+        }
+
+        .estado.inactivo .dot {
+            background-color: #ef4444;
+        }
+
+        .estado.inactivo .texto {
+            color: #ef4444;
+        }
+
+        /* Línea verde */
+        .linea-verde {
+            border: none;
+            border-top: 3px solid #22c55e;
+            margin-bottom: 12px;
+        }
+            
+    </style>
+</head>
+
+<body>
+
+<div class="dashboard-card">
+
+<header class="header">
+    <h2>Control de Laboratorio - Edificio J</h2>
+
+    <div class="header-actions">
+        <button class="btn-soporte" onclick="location.href='/personal'">
+            <i class="fas fa-headset"></i>
+        </button>
+
+        <div class="icon-group">
+            <button id="cogButton"><i class="fa-solid fa-gear"></i></button>
+            <div class="dropdown-content" id="settingsMenu">
+                <button onclick="location.href='/reportar-problema'">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span>Reportar Problema</span>
+                </button>
+                <button onclick="location.href='/estado-sistema'">
+                    <i class="fa-solid fa-circle-info"></i>
+                    <span>Estado del Sistema</span>
+                </button>
+                <hr>
+                <a href="/auth/logout" class="logout">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <span>Cerrar Sesión</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</header>
+
+<div class="main-grid">
+
+<section>
+    <h3 class="section-title">1. Configuración del Acceso</h3>
+
+    <form action="/docente/abrir-clase" method="POST">
+
+    <label>Docente Responsable</label>
+    <span class="docente-badge"><%= user.nombre %></span>
+        <!--
+    <label>Carrera</label>
+    <select name="carrera" required>
+        <% carreras.forEach(c => { %>
+        <option value="<%= c.carrera %>"><%= c.carrera %></option>
+        <% }) %>
+    </select>
+    -->
+
+    <label>Carrera</label>
+    <select name="carrera" required>
+    <option disabled selected>Seleccione carrera...</option>
+
+    <option value="Ingeniería en Sistemas Computacionales">Ingeniería en Sistemas Computacionales</option>
+
+    <!-- 🛠️ Ingenierías 
+    <option value="Ingeniería Industrial">Ingeniería Industrial</option>
+    <option value="Ingeniería Mecatrónica">Ingeniería Mecatrónica</option>
+    <option value="Ingeniería Química">Ingeniería Química</option>
+    <option value="Ingeniería en Animación Digital y Efectos Visuales">
+        Ingeniería en Animación Digital y Efectos Visuales
+    </option>
+
+    <!- 📊 Licenciaturas 
+    <option value="Licenciatura en Administración">Licenciatura en Administración</option>
+    <option value="Licenciatura en Gastronomía">Licenciatura en Gastronomía</option>
+
+    <!- 🎓 Posgrado 
+    <option value="Maestría en Administración">Maestría en Administración</option>-->
+    </select>
+
+
+    <label>Laboratorio</label>
+    <select name="laboratorio" required>
+        <option disabled selected>Seleccione laboratorio...</option>
+        <% laboratorios.forEach(l => { %>
+        <option value="<%= l.id %>"><%= l.nombre %></option>
+        <% }) %>
+    </select>
+
+    <label>Grupo</label>
+        <select name="grupo" required>
+        <option disabled selected>Seleccione grupo...</option>
+
+        <option value="1ISC11">1ISC11</option>
+        <option value="1ISC12">1ISC12</option>
+        <option value="1ISC21">1ISC21</option>
+
+        <option value="2ISC11">2ISC11</option>
+        <option value="2ISC21">2ISC21</option>
+
+        <option value="3ISC11">3ISC11</option>
+        <option value="3ISC12">3ISC12</option>
+        <option value="3ISC21">3ISC21</option>
+
+        <option value="4ISC11">4ISC11</option>
+        <option value="4ISC21">4ISC21</option>
+
+        <option value="5ISC11">5ISC11 </option>
+        <option value="5ISC12">5ISC12</option>
+        <option value="5ISC21">5ISC21</option>
+
+        <option value="6ISC11">6ISC11</option>
+        <option value="6ISC21">6ISC21</option>
+
+        <option value="7ISC21">7ISC21</option>
+        <option value="7ISC22">7ISC22</option>
+        <option value="7ISC23">7ISC23</option>
+
+        <option value="8ISC21">8ISC21</option>
+        </select>
+
+    <label>Horario</label>
+    <div style="display:flex; gap:10px;">
+        <input type="time" name="hora_inicio" required>
+        <input type="time" name="hora_fin" required>
+    </div>
+
+    <div style="display:flex; justify-content:space-between; margin-top:25px;">
+        <button class="btn-primary">HABILITAR ACCESO</button>
+        <button type="button" class="btn-save">
+        <i class="fas fa-save"></i> Borrador
+        </button>
+    </div>
+
+    </form>
+</section>
+
+<section>
+    <div class="monitor-header">
+        <h3>2. Monitoreo en Tiempo Real</h3>
+
+        <div id="estadoClase" class="estado <%= claseActiva ? 'activo' : 'inactivo' %>">
+            <span class="dot"></span>
+            <span class="texto">
+                <%= claseActiva ? 'Activo' : 'Inactivo' %>
+            </span>
+        </div>
+        </div>
+
+        <hr class="linea-verde">
+
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Alumno</th>
+                    <th>Máquina</th>
+                    <th>Estado</th>
+                    <th>Observación</th>
+                </tr>
+            </thead>
+            <tbody id="studentRealtime">
+                    <% if (registros.length === 0) { %>
+                        <tr>
+                        <td colspan="4" style="text-align:center; color:#a0aec0; padding-top:100px;">
+                            Esperando alumnos...
+                        </td>
+                        </tr>
+                    <% } else { %>
+                        <% registros.forEach(r => { %>
+                        <tr>
+                            <td><%= r.alumno %></td>
+                            <td><%= r.numero_equipo %></td>
+                            <td><span class="dot green"></span> Activo</td>
+                            <td><%= r.observaciones || "" %></td>
+                        </tr>
+                        <% }) %>
+                    <% } %>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+</div>
+</div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/docente.js"></script>
+
+    <script>
+    const socket = io();
+    const estado = document.getElementById("estadoClase");
+    const tbody = document.getElementById("studentRealtime");
+
+    
+
+    socket.on("clase_activada", () => {
+        estado.classList.remove("inactivo");
+        estado.classList.add("activo");
+        estado.querySelector(".texto").textContent = "Activo";
+    });
+
+    socket.on("clase_cerrada", () => {
+        estado.classList.remove("activo");
+        estado.classList.add("inactivo");
+        estado.querySelector(".texto").textContent = "Inactivo";
+    });
+    </script>
+
+
+</body>
+</html>

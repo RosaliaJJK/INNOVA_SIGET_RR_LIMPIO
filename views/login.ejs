@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+
+<html lang="es">
+
+<head>
+
+  <meta charset="UTF-8" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>Inicio De Sesión</title>
+
+  <!-- Vincula el archivo CSS para estilos -->
+
+  <link rel="stylesheet" href="/Style.css" />
+
+
+
+</head>
+
+<body>
+
+
+  <div class="container" id="container">
+
+    <!-- Panel de Registro a la izquierda -->
+
+    <div class="form-container sign-up-container">
+
+      <form id="registerForm">
+
+    <img src=Logo.jpg alt="LOGOTIPO"  width="200" height="180" loading="lazy">
+
+        <h2>Registrarse</h2>
+
+        <input type="text" placeholder="Nombre" name="nombre" required />
+
+        <input type="email" placeholder="Email" name="email" required />
+
+
+          <input 
+            type="password" 
+            placeholder="Contraseña" 
+            name="password" 
+            id="registerPassword" 
+            required
+            pattern="^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{6,}$"
+            title="La contraseña debe tener mínimo 6 caracteres, una mayúscula, un número y un símbolo"
+          />
+
+        <button type="submit">REGISTRARSE</button>
+
+    
+
+      </form>
+
+    </div>
+
+
+    <!-- Panel de Inicio de Sesión a la derecha -->
+
+    <div class="form-container sign-in-container">
+
+      <form id="loginForm">
+
+    <img src=Logo.jpg alt="LOGOTIPO"  width="200" height="180" loading="lazy">
+
+        <h2>Iniciar Sesión</h2>
+
+        
+
+        <input type="email" placeholder="Email" name="email" required />
+
+        <input type="password" placeholder="Contraseña" name="password" required />
+        
+
+        <a href="/recuperar-contrasena">¿Olvidaste tu contraseña?</a>
+
+        <button type="submit">INICIAR SESIÓN</button>
+
+      </form>
+
+    </div>
+
+
+    <!-- Panel con los mensajes y botones para alternar -->
+
+    <div class="overlay-container">
+
+      <div class="overlay">
+
+        <!-- Panel cuando estás en modo de bienvenida para registro -->
+
+        <div class="overlay-panel overlay-left">
+
+          <h1>¡Hola!</h1>
+
+          <p>¡Únete a INNOVA SIGET! Regístrate y comienza a gestionar tus bitácoras de laboratorio y recibir soporte técnico de manera rápida.</p>
+
+          <button class="ghost" id="signIn">Iniciar sesión</button>
+
+        </div>
+
+        <!-- Panel cuando estás en modo bienvenida para login -->
+
+        <div class="overlay-panel overlay-right">
+
+          <h1>¡Bienvenido!</h1>
+
+          <p>INNOVA SIGET te da la bienvenida. Bitácoras digitales y soporte técnico universitario al alcance de tu mano.</p>
+
+          <button class="ghost" id="signUp">Registrarse</button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+  const container = document.getElementById('container');
+  const loginForm = document.getElementById('loginForm');
+  const registerForm = document.getElementById('registerForm');
+
+  const signUpButton = document.getElementById('signUp');
+  const signInButton = document.getElementById('signIn');
+
+  if (!container || !loginForm || !registerForm || !signUpButton || !signInButton) {
+    console.error('❌ Elementos del DOM no encontrados');
+    return;
+  }
+
+  /* =========================
+     BOTONES DE CAMBIO DE PANEL
+  ========================= */
+  signUpButton.addEventListener('click', () => {
+    container.classList.add('right-panel-active');
+  });
+
+  signInButton.addEventListener('click', () => {
+    container.classList.remove('right-panel-active');
+  });
+
+  /* =========================
+     LOGIN
+  ========================= */
+  loginForm.addEventListener('submit', async e => {
+    e.preventDefault();
+
+    const email = e.target.email.value;
+    const password = e.target.password.value;
+
+    try {
+      const res = await fetch('/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+
+      const text = await res.text();
+      let data;
+
+      try {
+        data = JSON.parse(text);
+      } catch {
+        alert(text);
+        return;
+      }
+
+      if (!res.ok) {
+        alert(data.message);
+        return;
+      }
+
+      if (data.rol === 'ALUMNO') location.href = '/alumno';
+      if (data.rol === 'DOCENTE') location.href = '/docente';
+      if (data.rol === 'PERSONAL') location.href = '/personal';
+      if (data.rol === 'TECNICO') location.href = '/mantenimiento';
+
+    } catch (err) {
+      console.error(err);
+      alert('Error de conexión con el servidor');
+    }
+  });
+
+  /* =========================
+     REGISTRO
+  ========================= */
+  registerForm.addEventListener('submit', async e => {
+    e.preventDefault();
+
+    const nombre = e.target.nombre.value;
+    const email = e.target.email.value;
+    const password = e.target.password.value;
+
+    console.log('📤 Enviando registro...', { nombre, email, password });
+
+    try {
+      const res = await fetch('/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre, email, password })
+      });
+
+      const text = await res.text();
+      console.log('📥 RESPUESTA RAW:', text);
+
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        alert(text);
+        return;
+      }
+
+      if (!res.ok) {
+        alert(data.message);
+        return;
+      }
+
+      alert('Registro exitoso, ahora inicia sesión');
+      container.classList.remove('right-panel-active');
+
+    } catch (err) {
+      console.error('❌ FETCH ERROR:', err);
+      alert('Error de conexión con el servidor');
+    }
+  });
+
+});
+</script>
