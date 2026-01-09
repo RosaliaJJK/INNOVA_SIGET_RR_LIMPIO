@@ -5,20 +5,38 @@ const crypto = require('crypto');
 const router = express.Router();
 
 /* =========================
-   ENVÍO DE CORREO – BREVO API (HTTP)
+   REMITENTE SEGÚN ROL
 ========================= */
-async function enviarCorreoBrevo({ to, subject, html }) {
-  const response = await fetch("https://api.brevo.com/v3/smtp/email", {
-    method: "POST",
+function obtenerRemitentePorRol(rol) {
+  switch (rol) {
+    case 'TECNICO':
+      return process.env.BREVO_SENDER_MANTENIMIENTO;
+    case 'DOCENTE':
+      return process.env.BREVO_SENDER_DOCENTE;
+    case 'PERSONAL':
+      return process.env.BREVO_SENDER_PERSONAL;
+    case 'ALUMNO':
+      return process.env.BREVO_SENDER_PERSONAL; // alumno NO es remitente
+    default:
+      return process.env.BREVO_SENDER_PERSONAL;
+  }
+}
+
+/* =========================
+   ENVÍO DE CORREO – BREVO API
+========================= */
+async function enviarCorreoBrevo({ to, subject, html, senderEmail }) {
+  const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
     headers: {
-      "accept": "application/json",
-      "api-key": process.env.BREVO_API_KEY,
-      "content-type": "application/json"
+      accept: 'application/json',
+      'api-key': process.env.BREVO_API_KEY,
+      'content-type': 'application/json'
     },
     body: JSON.stringify({
       sender: {
-        name: "INNOVA SIGET",
-        email: process.env.EMAIL_USER
+        name: 'INNOVA SIGET',
+        email: senderEmail
       },
       to: [{ email: to }],
       subject,
@@ -62,15 +80,7 @@ const MANTENIMIENTO = [
 const DOCENTES_LISTA_BLANCA = [
   'docenteinnova074@gmail.com','guillermovarela@teschi.edu.mx',
   'mario_montiel@teschi.edu.mx','juliomendez@teschi.edu.mx',
-  'juanalbertoramirez@teschi.edu.mx','josemartinez@teschi.edu.mx',
-  'renevictorinolopez@teschi.edu.mx','luciotun@teschi.edu.mx',
-  'bernardinosanchez@teschi.edu.mx','nicolastrejo@teschi.edu.mx',
-  'marcollinas@teschi.edu.mx','jose_hernandez_santiago@teschi.edu.mx',
-  'adriangarduno@teschi.edu.mx','allangomez@teschi.edu.mx',
-  'sharonsolis@teschi.edu.mx','anuarmalcon@teschi.edu.mx',
-  'gumesindoflores@teschi.edu.mx','alejandrojavierrivera@teschi.edu.mx',
-  'heribertoflores@teschi.edu.mx','zitaalvarez@teschi.edu.mx',
-  'abrahamjorge@teschi.edu.mx','yolandacastro@teschi.edu.mx'
+  'juanalbertoramirez@teschi.edu.mx'
 ];
 
 function detectarRol(email) {
@@ -79,16 +89,14 @@ function detectarRol(email) {
   if (PERSONAL_ADMIN.includes(email)) return 'PERSONAL';
   if (DOCENTES_LISTA_BLANCA.includes(email)) return 'DOCENTE';
   if (/^[0-9]{10}@teschi\.edu\.mx$/.test(email)) return 'ALUMNO';
-  if (/^[a-z]+@teschi\.edu\.mx$/.test(email)) return 'DOCENTE';
   return null;
 }
 
 const PASSWORD_REGEX = /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{6,}$/;
 
 /* =========================
-   AUTENTICACIÓN
+   REGISTRO
 ========================= */
-
 router.post('/register', async (req, res) => {
   const { nombre, email, password } = req.body;
   const db = req.db;
@@ -100,16 +108,20 @@ router.post('/register', async (req, res) => {
   }
 
   const hash = await bcrypt.hash(password, 10);
+
   db.query(
     'INSERT INTO usuarios (nombre, email, rol, password) VALUES (?, ?, ?, ?)',
     [nombre, email, rol, hash],
-    (err) => {
+    err => {
       if (err) return res.status(400).json({ message: 'Correo ya registrado' });
       res.status(200).json({ message: 'Registro exitoso' });
     }
   );
 });
 
+/* =========================
+   LOGIN
+========================= */
 router.post('/login', (req, res) => {
   const { email, password } = req.body;
 
@@ -117,13 +129,13 @@ router.post('/login', (req, res) => {
     'SELECT * FROM usuarios WHERE email = ?',
     [email],
     async (err, results) => {
-      if (err || results.length === 0) {
+      if (err || results.length === 0)
         return res.status(401).json({ message: 'Credenciales incorrectas' });
-      }
 
       const user = results[0];
       const ok = await bcrypt.compare(password, user.password);
-      if (!ok) return res.status(401).json({ message: 'Credenciales incorrectas' });
+      if (!ok)
+        return res.status(401).json({ message: 'Credenciales incorrectas' });
 
       req.session.user = {
         id: user.id,
@@ -137,6 +149,9 @@ router.post('/login', (req, res) => {
   );
 });
 
+/* =========================
+   LOGOUT
+========================= */
 router.get('/logout', (req, res) => {
   req.session.destroy(() => {
     res.clearCookie('connect.sid');
@@ -145,9 +160,8 @@ router.get('/logout', (req, res) => {
 });
 
 /* =========================
-   RECUPERACIÓN DE CONTRASEÑA
+   RECUPERAR CONTRASEÑA
 ========================= */
-
 router.get('/recuperar-contrasena', (req, res) => {
   res.render('recuperar-contrasena', { error: null, success: null });
 });
@@ -165,6 +179,9 @@ router.post('/recuperar', (req, res) => {
         });
       }
 
+      const rol = detectarRol(email);
+      const senderEmail = obtenerRemitentePorRol(rol);
+
       const token = crypto.randomBytes(32).toString('hex');
       const expira = new Date(Date.now() + 3600000)
         .toISOString()
@@ -175,21 +192,26 @@ router.post('/recuperar', (req, res) => {
         'UPDATE usuarios SET reset_token = ?, reset_expira = ? WHERE email = ?',
         [token, expira, email],
         async () => {
-
           const link = `${process.env.BASE_URL}/auth/reset/${token}`;
 
           try {
             await enviarCorreoBrevo({
               to: email,
+              senderEmail,
               subject: 'Recuperación de contraseña',
-              html: `<p>Haz clic en el siguiente enlace:</p>
-                     <a href="${link}">${link}</a>`
+              html: `
+                <p>Haz clic en el siguiente enlace para restablecer tu contraseña:</p>
+                <a href="${link}">${link}</a>
+                <p>Este enlace expira en 1 hora.</p>
+              `
             });
 
             res.render('recuperar-contrasena', { success: 'Correo enviado' });
           } catch (error) {
             console.error('❌ BREVO ERROR:', error.message);
-            res.render('recuperar-contrasena', { error: 'No se pudo enviar el correo' });
+            res.render('recuperar-contrasena', {
+              error: 'No se pudo enviar el correo'
+            });
           }
         }
       );
@@ -197,14 +219,19 @@ router.post('/recuperar', (req, res) => {
   );
 });
 
+/* =========================
+   RESET CONTRASEÑA
+========================= */
 router.get('/reset/:token', (req, res) => {
   req.db.query(
     'SELECT id FROM usuarios WHERE reset_token = ? AND reset_expira > NOW()',
     [req.params.token],
     (err, results) => {
-      if (err || results.length === 0) {
-        return res.render('recuperar-contrasena', { error: 'Token inválido o expirado' });
-      }
+      if (err || results.length === 0)
+        return res.render('recuperar-contrasena', {
+          error: 'Token inválido o expirado'
+        });
+
       res.render('reset', { token: req.params.token });
     }
   );
@@ -233,7 +260,9 @@ router.post('/reset/:token', async (req, res) => {
     'UPDATE usuarios SET password = ?, reset_token = NULL, reset_expira = NULL WHERE reset_token = ?',
     [hash, req.params.token],
     () => {
-      res.send("<script>alert('Contraseña actualizada'); window.location='/'</script>");
+      res.send(
+        "<script>alert('Contraseña actualizada'); window.location='/'</script>"
+      );
     }
   );
 });
