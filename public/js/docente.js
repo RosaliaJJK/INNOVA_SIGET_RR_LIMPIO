@@ -97,6 +97,8 @@ document.getElementById("btnRegistrar")?.addEventListener("click", async () => {
   });
 
   const data = await res.json();
+  window.alert(result.message);
+
 
   if (data.error) {
     alert(data.error);

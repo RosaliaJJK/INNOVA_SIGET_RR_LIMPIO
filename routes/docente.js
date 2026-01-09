@@ -124,7 +124,6 @@ router.post("/abrir-clase", verificarSesion, soloRol(["DOCENTE"]), (req, res) =>
           message: "⚠️ Ya tienes una bitácora activa"
         });
       }
-
       
 
       // 2️⃣ LABORATORIO ocupado
