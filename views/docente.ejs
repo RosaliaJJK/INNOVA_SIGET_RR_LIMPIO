@@ -485,5 +485,26 @@
 <!-- SweetAlert2 -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+<script>
+    const cogButton = document.getElementById("cogButton");
+    const menu = document.getElementById("settingsMenu");
+
+    cogButton.onclick = (e) => {
+        e.stopPropagation();
+        menu.style.display = menu.style.display === "block" ? "none" : "block";
+    };
+
+    document.onclick = () => menu.style.display = "none";
+
+    function navAction(action) {
+        menu.style.display = "none";
+        console.log("Acción:", action);
+    }
+
+    function loadData() {
+        console.log("Conectando con el servidor...");
+    }
+</script>
+
 </body>
 </html>
