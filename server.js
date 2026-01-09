@@ -99,14 +99,16 @@ io.on("connection", socket => {
 
 });
 
+
 /* =========================
-   CIERRE AUTOMÁTICO REAL ⏰
+   CIERRE AUTOMÁTICO REAL ⏰ (HORA MÉXICO)
 ========================= */
 setInterval(() => {
   db.query(
     `
     UPDATE clases
-    SET estado = 'CERRADA'
+    SET estado = 'CERRADA',
+        fecha_fin = NOW()
     WHERE estado = 'ACTIVA'
       AND TIMESTAMP(fecha, hora_fin) <= NOW()
     `,
@@ -117,30 +119,12 @@ setInterval(() => {
       }
 
       if (result.affectedRows > 0) {
-        console.log("⏰ Bitácora cerrada correctamente");
+        console.log("⏰ Bitácora cerrada en tiempo real");
         io.emit("clase_cerrada");
       }
     }
   );
-}, 30000);
-
-/* =========================
-   VERIFICACIÓN GLOBAL (CORREGIDA)
-========================= */
-setInterval(() => {
-  const db = app.get("db");
-  if (!db) return;
-
-  db.query(
-    `
-    UPDATE clases
-    SET estado='CERRADA',
-        fecha_fin = NOW() - INTERVAL 6 HOUR
-    WHERE estado='ACTIVA'
-      AND TIMESTAMP(fecha, hora_fin) <= NOW() - INTERVAL 6 HOUR
-    `
-  );
-}, 60000);
+}, 1000); // cada 1 segundo
 
 /* =========================
    SERVIDOR

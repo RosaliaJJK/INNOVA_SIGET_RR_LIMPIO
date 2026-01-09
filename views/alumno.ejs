@@ -90,11 +90,16 @@
             pointer-events: none;
         }
 
+        .warning-text {
+            color: #c62828;
+            font-size: 13px;
+            display: none;
+            margin-top: 4px;
+        }
+
+
     </style>
 </head>
-
-
-
 
 <body>
 
@@ -133,8 +138,8 @@
         </div>
     </div>
 
-    <!-- FORMULARIO -->
-     <div id="bitacora" class="disabled"></div>
+    <!-- FORMULARIO 
+     <div id="bitacora" class="disabled"></div>-->
         <form id="form-registro" method="POST">
             
             <label>Laboratorio</label>
@@ -166,109 +171,67 @@
                 2. Datos de Bitácora
             </h3>
 
-                    <div id="registrationContent" class="registration-grid">
+                <div id="registrationContent" class="registration-grid" style="display:none;">
 
-                        <!-- COLUMNA IZQUIERDA -->
-                        <div class="panel panel-left">
-                            <h4>Detalles del Usuario</h4>
+                    <!-- COLUMNA IZQUIERDA -->
+                    <div class="panel panel-left">
+                        <h4>Detalles del Usuario</h4>
 
-                            <label>Nombre Completo</label>
-                            <input type="text" readonly value="<%= user.nombre %>">
+                        <label>Nombre Completo</label>
+                        <input type="text" readonly value="<%= user.nombre %>">
 
-                            <label>Matrícula / ID</label>
-                            <input type="text" id="matricula" readonly value="<%= user.email.split('@')[0] %>">
+                        <label>Matrícula / ID</label>
+                        <input type="text" id="matricula" readonly value="<%= user.email.split('@')[0] %>">
 
-                            <label for="machineNumber">Número de Equipo</label>
-                            <select id="machineNumber" required>
+                        <label for="machineNumber">Número de Equipo</label>
+                        <select id="machineNumber" required>
                             <option value="">Seleccione equipo</option>
-                            </select>
+                        </select>
 
-                            <!--
-                            <select id="machineNumber" name="machineNumber" required>
-                                <option value="">Seleccione equipo</option>
-                            </select>-->
-
-                            <!--
-                            <label for="observation">Observaciones</label>
-                            <textarea id="observation" name="observation"></textarea>-->
-
-                            <label>Observaciones</label>
-                            <textarea id="observation" placeholder="Observaciones..."></textarea>
+                        <label>Observaciones</label>
+                        <!--<textarea id="observation" placeholder="Observaciones..."></textarea>-->
+                        <textarea id="observation"></textarea>
+                        <small id="errorObservacion" class="error-text"></small>
+                        <!--<small id="obsWarning" class="warning-text"></small>-->
 
 
 
-                            <!-- BOTONES ABAJO 
-                            <div class="btn-group">
-                                <button type="submit" id="registerButton" disabled>
-                                    REGISTRAR ENTRADA
-                                </button>-->
+                        <button id="registerButton" type="submit" class="btn-primary">
+                        REGISTRAR ENTRADA
+                        </button>
 
-                            <button id="registerButton" class="btn-primary" disabled>
-                                REGISTRAR ENTRADA
-                            </button>
-
-                                <button type="button" class="btn-update" onclick="checkAccess()">
-                                    Actualizar
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- COLUMNA DERECHA -->
-                        <div class="panel panel-right">
-                            <h4>Información de la Sesión</h4>
-
-                            <div class="info-box">
-                                Laboratorio:
-                                <strong id="labInfo">---</strong>
-                            </div>
-
-                            <div class="info-box">
-                                Docente:
-                                <strong id="docenteInfo">---</strong>
-                            </div>
-                        </div>
+                        <button type="button" class="btn-update">
+                        Actualizar
+                        </button>
 
                     </div>
 
+                    <!-- COLUMNA DERECHA -->
+                    <div class="panel panel-right">
+                        <h4>Información de la Sesión</h4>
+
+                        <div class="info-box">
+                            Laboratorio:
+                            <strong id="labInfo">---</strong>
+                        </div>
+
+                        <div class="info-box">
+                            Docente:
+                            <strong id="docenteInfo">---</strong>
+                        </div>
+                    </div>
 
                 </div>
-
-            </div>
-
         </form>
     </div>
 </div>
 
 <script src="/socket.io/socket.io.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script src="/js/alumno.js"></script>
 
-<!--
-    <script>
-        const socket = io();
-        const bitacora = document.getElementById("registrationContent");
-        const btn = document.getElementById("registerButton");
 
-        socket.on("estado_clase", data => {
-        if (data.activa) {
-            bitacora.classList.remove("disabled");
-            btn.disabled = false;
-        } else {
-            bitacora.classList.add("disabled");
-            btn.disabled = true;
-        }
-        });
-
-        socket.on("clase_habilitada", () => {
-            bitacora.classList.remove("disabled");
-            btn.disabled = false;
-        });
-
-        socket.on("clase_cerrada", () => {
-        bitacora.classList.add("disabled");
-            btn.disabled = true;
-        });
-    </script>
-
--->
 </body>
 </html>

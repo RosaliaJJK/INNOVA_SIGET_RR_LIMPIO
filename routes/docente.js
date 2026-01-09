@@ -6,16 +6,25 @@ const { verificarSesion, soloRol } = require("../middlewares/authMiddleware");
    FUNCIÓN: CIERRE AUTOMÁTICO (HORARIO REAL)
 ====================================================== */
 function verificarCierreAutomatico(db) {
-  db.query(
-    `
+  // 1️⃣ cerrar clases por horario
+  db.query(`
     UPDATE clases
     SET estado='CERRADA',
         fecha_fin = NOW() - INTERVAL 6 HOUR
     WHERE estado='ACTIVA'
-    AND TIMESTAMP(fecha, hora_fin) <= NOW() - INTERVAL 6 HOUR
-    `
-  );
+      AND TIMESTAMP(fecha, hora_fin) <= NOW() - INTERVAL 6 HOUR
+  `);
+
+  // 2️⃣ cerrar salidas de alumnos
+  db.query(`
+    UPDATE registros r
+    JOIN clases c ON r.id_clase = c.id
+    SET r.hora_salida = NOW()
+    WHERE c.estado='CERRADA'
+      AND r.hora_salida IS NULL
+  `);
 }
+
 
 /* ======================================================
    VISTA DOCENTE
@@ -160,30 +169,59 @@ router.post("/abrir-clase", verificarSesion, soloRol(["DOCENTE"]), (req, res) =>
 ====================================================== */
 router.post("/cerrar-clase", verificarSesion, soloRol(["DOCENTE"]), (req, res) => {
   const db = req.db;
+  const docenteId = req.session.user.id;
 
+  // obtener la clase activa
   db.query(
-    `
-    UPDATE clases
-    SET estado='CERRADA',
-        fecha_fin = NOW() - INTERVAL 6 HOUR
-    WHERE estado='ACTIVA'
-    AND id_docente=?
-    `,
-    [req.session.user.id],
-    err => {
-      if (err) {
-        console.error(err);
-        return res.status(500).json({
-          message: "❌ Error al cerrar la bitácora"
+    `SELECT id FROM clases WHERE estado='ACTIVA' AND id_docente=?`,
+    [docenteId],
+    (err, rows) => {
+      if (err || !rows.length) {
+        return res.status(400).json({
+          message: "⚠️ No hay bitácora activa"
         });
       }
 
-      return res.json({
-        message: "✅ Bitácora cerrada correctamente"
-      });
+      const idClase = rows[0].id;
+
+      // 1️⃣ cerrar la clase
+      db.query(
+        `
+        UPDATE clases
+        SET estado='CERRADA',
+            fecha_fin = NOW() - INTERVAL 6 HOUR
+        WHERE id=?
+        `,
+        [idClase],
+        err2 => {
+          if (err2) {
+            console.error(err2);
+            return res.status(500).json({
+              message: "❌ Error al cerrar la bitácora"
+            });
+          }
+
+          // 2️⃣ cerrar salidas
+          db.query(
+            `
+            UPDATE registros
+            SET hora_salida = NOW()
+            WHERE id_clase = ?
+              AND hora_salida IS NULL
+            `,
+            [idClase]
+          );
+
+          return res.json({
+            message: "✅ Bitácora cerrada correctamente"
+          });
+        }
+      );
     }
   );
 });
+
+
 
 module.exports = router;
 
@@ -204,3 +242,4 @@ router.get("/laboratorios/:carrera", verificarSesion, soloRol(["DOCENTE"]), (req
     }
   );
 });
+
