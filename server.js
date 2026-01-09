@@ -93,12 +93,11 @@ app.get("/", (req, res) => {
 io.on("connection", socket => {
 
   socket.on("join_lab", zonaId => {
-    socket.join(`lab_${zonaId}`);
+    io.to(`lab_${zonaId}`).emit("clase_cerrada");
     console.log("Socket unido a lab_", zonaId);
   });
 
 });
-
 
 /* =========================
    CIERRE AUTOMÁTICO REAL ⏰ (HORA MÉXICO)

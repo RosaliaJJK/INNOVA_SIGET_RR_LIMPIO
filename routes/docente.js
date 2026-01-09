@@ -6,7 +6,6 @@ const { verificarSesion, soloRol } = require("../middlewares/authMiddleware");
    FUNCIÓN: CIERRE AUTOMÁTICO (HORARIO REAL)
 ====================================================== */
 function verificarCierreAutomatico(db) {
-  // 1️⃣ cerrar clases por horario
   db.query(`
     UPDATE clases
     SET estado='CERRADA',
@@ -126,6 +125,8 @@ router.post("/abrir-clase", verificarSesion, soloRol(["DOCENTE"]), (req, res) =>
         });
       }
 
+      
+
       // 2️⃣ LABORATORIO ocupado
       db.query(
         `SELECT id FROM clases WHERE estado='ACTIVA' AND id_zona=?`,
@@ -221,10 +222,6 @@ router.post("/cerrar-clase", verificarSesion, soloRol(["DOCENTE"]), (req, res) =
   );
 });
 
-
-
-module.exports = router;
-
 router.get("/laboratorios/:carrera", verificarSesion, soloRol(["DOCENTE"]), (req, res) => {
   const db = req.db;
   const carrera = req.params.carrera;
@@ -243,3 +240,25 @@ router.get("/laboratorios/:carrera", verificarSesion, soloRol(["DOCENTE"]), (req
   );
 });
 
+router.get("/api/registros-activos", verificarSesion, soloRol(["DOCENTE"]), (req, res) => {
+  const db = req.db;
+
+  db.query(
+    `
+    SELECT r.*, u.nombre
+    FROM registros r
+    JOIN usuarios u ON r.id_alumno = u.id
+    WHERE r.hora_salida IS NULL
+    ORDER BY r.hora_entrada DESC
+    `,
+    (err, rows) => {
+      if (err) return res.send("");
+
+      res.render("docente/partials/tabla_registros", {
+        registros: rows
+      });
+    }
+  );
+});
+
+module.exports = router;

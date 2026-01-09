@@ -209,6 +209,7 @@ document.querySelector(".btn-update").addEventListener("click", () => {
     Swal.fire("Actualizado", "Datos actualizados correctamente", "success");
     cargarMaquinas(zonaSelect.value);
   });
+
 });
 
 
@@ -216,6 +217,14 @@ document.querySelector(".btn-update").addEventListener("click", () => {
    SOCKET: CIERRE
 ========================= */
 socket.on("clase_cerrada", () => {
-  Swal.fire("Aviso", "La bitácora fue cerrada", "info")
-    .then(() => location.reload());
+  Swal.fire({
+    title: "Aviso",
+    text: "La bitácora fue cerrada",
+    icon: "info",
+    timer: 3000,          // 3 segundos
+    timerProgressBar: true,
+    showConfirmButton: false
+  }).then(() => {
+    location.reload();
+  });
 });
