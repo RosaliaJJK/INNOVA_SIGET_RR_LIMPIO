@@ -1,5 +1,7 @@
 const express = require("express");
 const router = express.Router();
+const multer = require("multer");
+const upload = multer();
 const { verificarSesion, soloRol } = require("../middlewares/authMiddleware");
 
 /*
@@ -97,6 +99,7 @@ router.post(
   "/registrar",
   verificarSesion,
   soloRol(["ALUMNO"]),
+  upload.none(),
   (req, res) => {
 
     const db = req.db; // ✅ USAR LA MISMA CONEXIÓN
@@ -142,7 +145,7 @@ router.post(
             // 2️⃣ ocupar máquina
             db.query(
               `UPDATE maquinas
-               SET ocupada = 1
+               SET estado = 'OCUPADA'
                WHERE id_zona = ? AND numero_equipo = ?`,
               [id_zona, numero_equipo],
               err => {
@@ -234,11 +237,11 @@ router.get(
 
     db.query(
       `
-      SELECT numero_equipo
-      FROM maquinas
-      WHERE id_zona = ?
-      AND ocupada = 0
-      ORDER BY numero_equipo
+        SELECT numero_equipo
+        FROM maquinas
+        WHERE id_zona = ?
+        AND estado = 'LIBRE'
+        ORDER BY numero_equipo
       `,
       [req.params.idZona],
       (err, rows) => {
@@ -297,14 +300,14 @@ router.post(
 
             // liberar máquina anterior
             db.query(
-              `UPDATE maquinas SET ocupada = 0
+              `UPDATE maquinas SET estado = 'LIBRE'
                WHERE id_zona = ? AND numero_equipo = ?`,
               [id_zona, maquinaAnterior]
             );
 
             // ocupar nueva máquina
             db.query(
-              `UPDATE maquinas SET ocupada = 1
+              `UPDATE maquinas SET estado = 'OCUPADA'
                WHERE id_zona = ? AND numero_equipo = ?`,
               [id_zona, numero_equipo]
             );
@@ -324,9 +327,8 @@ router.post(
 );
 
 
-
 /*
-router.post("/registrar-entrada", verificarSesion, soloRol(["ALUMNO"]), (req, res) => {
+router.post("/alumno/registrar", verificarSesion, soloRol(["ALUMNO"]), (req, res) => {
   const db = req.db;
   const { numero_equipo, observaciones } = req.body;
   const idAlumno = req.session.user.id;
@@ -368,11 +370,12 @@ router.post("/registrar-entrada", verificarSesion, soloRol(["ALUMNO"]), (req, re
           db.query(
             `
             UPDATE maquinas
-            SET ocupada = 1
+            SET estado = 'OCUPADA'
             WHERE numero_equipo = ?
             `,
             [numero_equipo]
           );
+          
 
           return res.json({
             message: "✅ Entrada registrada correctamente"
@@ -381,9 +384,9 @@ router.post("/registrar-entrada", verificarSesion, soloRol(["ALUMNO"]), (req, re
       );
     }
   );
-});*/
+});
 
-
+*/
 
 
 module.exports = router;

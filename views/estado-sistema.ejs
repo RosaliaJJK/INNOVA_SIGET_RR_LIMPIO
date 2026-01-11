@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Estado del Sistema</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        body {
+            background: #f4f7f9;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .status-card {
+            background: #ffffff;
+            padding: 35px;
+            width: 480px;
+            border-radius: 14px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+            text-align: center;
+        }
+
+        .icon {
+            font-size: 42px;
+            margin-bottom: 10px;
+        }
+
+        .ok { color: #22c55e; }
+        .warn { color: #f59e0b; }
+        .error { color: #ef4444; }
+
+        h2 {
+            color: #1a365d;
+            margin-bottom: 12px;
+        }
+
+        p {
+            font-size: 15px;
+            color: #475569;
+        }
+
+        small {
+            display: block;
+            margin-top: 18px;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="status-card">
+
+    <% if (estado === "ok") { %>
+        <div class="icon ok">🟢</div>
+        <p>El sistema funciona con normalidad.</p>
+    <% } else if (estado === "warning") { %>
+        <div class="icon warn">🟡</div>
+        <p>Se detectan fallas temporales en el módulo de bitácoras.</p>
+    <% } else { %>
+        <div class="icon error">🔴</div>
+        <p>Mantenimiento programado de 22:00 a 23:00 hrs.</p>
+    <% } %>
+
+    <small>Última actualización: <%= ultimaActualizacion %></small>
+</div>
+
+</body>
+</html>

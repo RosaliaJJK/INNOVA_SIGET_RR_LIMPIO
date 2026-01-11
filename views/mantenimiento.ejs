@@ -209,6 +209,26 @@
         @media (max-width: 1024px) {
             .form-content { flex-direction: column; }
         }
+
+        /* ===== MODAL BITÁCORAS (AGREGADO) ===== */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.4);
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+
+        .modal-content {
+            background: #fff;
+            padding: 25px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 700px;
+        }
     </style>
 </head>
 
@@ -275,6 +295,10 @@
                 </button>
                 <button class="btn btn-danger">
                     <i class="fas fa-trash-alt"></i> Eliminar
+                </button>
+                <!-- BOTÓN AGREGADO -->
+                <button class="btn btn-outline" onclick="openBitacoras()">
+                    <i class="fas fa-clipboard-list"></i> Bitácoras por Laboratorio
                 </button>
             </div>
 
@@ -360,6 +384,46 @@
     </div>
 </div>
 
+<!-- ===== MODAL BITÁCORAS (AGREGADO) ===== -->
+<div id="bitacoraModal" class="modal">
+    <div class="modal-content">
+        <h3>📒 Bitácoras de Alumnos</h3>
+
+        <label>Laboratorio</label>
+        <select>
+            <option>Laboratorio 1</option>
+            <option>Laboratorio 2</option>
+        </select>
+
+        <label>Fecha</label>
+        <input type="date">
+
+        <button class="btn btn-secondary" style="margin-top:10px;">
+            Consultar Bitácoras
+        </button>
+
+        <table style="margin-top:15px;">
+            <thead>
+                <tr>
+                    <th>Alumno</th>
+                    <th>Entrada</th>
+                    <th>Salida</th>
+                    <th>Actividad</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td colspan="4" style="text-align:center;">Sin datos</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <button class="btn btn-danger" style="margin-top:10px;" onclick="closeBitacoras()">
+            Cerrar
+        </button>
+    </div>
+</div>
+
 <script>
     const cogButton = document.getElementById("cogButton");
     const menu = document.getElementById("settingsMenu");
@@ -378,6 +442,15 @@
 
     function loadData() {
         console.log("Conectando con el servidor...");
+    }
+
+    /* ===== FUNCIONES AGREGADAS ===== */
+    function openBitacoras() {
+        document.getElementById("bitacoraModal").style.display = "flex";
+    }
+
+    function closeBitacoras() {
+        document.getElementById("bitacoraModal").style.display = "none";
     }
 </script>
 

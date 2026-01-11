@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Reportar Problema</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <style>
+        body {
+            background: #f4f7f9;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .card {
+            background: #ffffff;
+            padding: 30px;
+            width: 420px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+        }
+
+        h2 {
+            color: #1a365d;
+            margin-bottom: 10px;
+        }
+
+        p {
+            font-size: 14px;
+            color: #64748b;
+            margin-bottom: 20px;
+        }
+
+        label {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        select, textarea {
+            width: 100%;
+            padding: 10px;
+            margin-top: 8px;
+            margin-bottom: 18px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            font-size: 14px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #3182ce;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="card">
+    <h2>Reportar Problema</h2>
+    <p>Describe brevemente el problema que presentas en el sistema.</p>
+
+    <form id="formReporte">
+        <label>Tipo de problema</label>
+        <select name="tipo_problema" required>
+            <option value="">Seleccione una opción</option>
+            <option value="Error del sistema">Error del sistema</option>
+            <option value="Página no responde">Página no responde</option>
+            <option value="Problema de acceso">Problema de acceso</option>
+            <option value="Otro">Otro</option>
+        </select>
+
+        <label>Descripción del problema</label>
+        <textarea name="descripcion"
+                  rows="5"
+                  placeholder="Ejemplo: La página se queda cargando al guardar..."
+                  required></textarea>
+
+        <button type="submit">
+            <i class="fa-solid fa-paper-plane"></i> Enviar reporte
+        </button>
+    </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="/js/reportar-problema.js"></script>
+
+</body>
+</html>

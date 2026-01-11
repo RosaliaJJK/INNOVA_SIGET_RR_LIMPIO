@@ -2,6 +2,9 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 
+//const { verificarSesion, soloRol } = require("../middlewares/authMiddleware");
+
+
 const router = express.Router();
 
 /* =========================
@@ -144,7 +147,13 @@ router.post('/login', (req, res) => {
         rol: user.rol
       };
 
-      res.status(200).json({ message: 'Login exitoso', rol: user.rol });
+      return res.json({
+        ok: true,
+        rol: user.rol
+      });
+
+      //res.status(200).json({ message: 'Login exitoso', rol: user.rol });
+      //return res.json({ ok: true, rol: user.rol });
     }
   );
 });
@@ -266,5 +275,13 @@ router.post('/reset/:token', async (req, res) => {
     }
   );
 });
+
+/* =========================
+   REPORTAR PROBLEMA
+========================= */
+router.get("/reportar-problema", (req, res) => {
+  res.render("reportar-problema");
+});
+
 
 module.exports = router;

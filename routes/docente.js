@@ -1,5 +1,7 @@
 const express = require("express");
 const router = express.Router();
+const multer = require("multer");
+const upload = multer();
 const { verificarSesion, soloRol } = require("../middlewares/authMiddleware");
 
 /* ======================================================
@@ -14,7 +16,6 @@ function verificarCierreAutomatico(db) {
       AND TIMESTAMP(fecha, hora_fin) <= NOW() - INTERVAL 6 HOUR
   `);
 
-  // 2️⃣ cerrar salidas de alumnos
   db.query(`
     UPDATE registros r
     JOIN clases c ON r.id_clase = c.id
@@ -24,30 +25,23 @@ function verificarCierreAutomatico(db) {
   `);
 }
 
-
 /* ======================================================
    VISTA DOCENTE
 ====================================================== */
 router.get("/", verificarSesion, soloRol(["DOCENTE"]), (req, res) => {
   const db = req.db;
 
-  // 🔴 SIEMPRE verificar cierre por horario
   verificarCierreAutomatico(db);
 
   db.query(
     `
     SELECT DISTINCT carrera FROM usuarios WHERE carrera IS NOT NULL;
     SELECT id, nombre FROM zonas WHERE tipo='LABORATORIO';
-
-    SELECT id
-    FROM clases
-    WHERE estado='ACTIVA'
-    AND id_docente=?;
+    SELECT id FROM clases WHERE estado='ACTIVA' AND id_docente=?;
     `,
     [req.session.user.id],
     (err, results) => {
       if (err) {
-        console.error(err);
         return res.status(500).send("Error al cargar datos");
       }
 
@@ -78,8 +72,10 @@ router.get("/", verificarSesion, soloRol(["DOCENTE"]), (req, res) => {
         [idClase],
         (err2, registros) => {
           if (err2) {
-            console.error(err2);
-            return res.status(500).send("Error al cargar registros");
+            return res.status(500).json({
+              ok: false,
+              message: "❌ Error al cargar registros"
+            });
           }
 
           res.render("docente", {
@@ -98,46 +94,46 @@ router.get("/", verificarSesion, soloRol(["DOCENTE"]), (req, res) => {
 /* ======================================================
    ABRIR BITÁCORA
 ====================================================== */
-router.post("/abrir-clase", verificarSesion, soloRol(["DOCENTE"]), (req, res) => {
+router.post("/abrir-clase", verificarSesion, soloRol(["DOCENTE"]), upload.none(), (req, res) => {
   const db = req.db;
+    console.log("BODY:", req.body); // <--- esto nos dice si llegan los datos
 
-  const { carrera, laboratorio, grupo, hora_inicio, hora_fin } = req.body;
+  //const { carrera, laboratorio, grupo, hora_inicio, hora_fin } = req.body;
+  const { carrera, laboratorio, grupo, hora_inicio, hora_fin } = req.body || {};
   const docenteId = req.session.user.id;
   const idZona = parseInt(laboratorio);
 
   if (!carrera || !grupo || !hora_inicio || !hora_fin || isNaN(idZona)) {
     return res.status(400).json({
+      ok: false,
       message: "⚠️ Todos los campos son obligatorios"
     });
   }
 
-  // 🔴 cierre automático antes de validar
   verificarCierreAutomatico(db);
 
-  // 1️⃣ DOCENTE: solo 1 activa
   db.query(
     `SELECT id FROM clases WHERE estado='ACTIVA' AND id_docente=?`,
     [docenteId],
     (err, r1) => {
       if (r1.length) {
         return res.status(400).json({
+          ok: false,
           message: "⚠️ Ya tienes una bitácora activa"
         });
       }
-      
 
-      // 2️⃣ LABORATORIO ocupado
       db.query(
         `SELECT id FROM clases WHERE estado='ACTIVA' AND id_zona=?`,
         [idZona],
         (err2, r2) => {
           if (r2.length) {
             return res.status(400).json({
+              ok: false,
               message: "⚠️ El laboratorio ya está en uso"
             });
           }
 
-          // 3️⃣ insertar bitácora
           db.query(
             `
             INSERT INTO clases
@@ -147,13 +143,17 @@ router.post("/abrir-clase", verificarSesion, soloRol(["DOCENTE"]), (req, res) =>
             [docenteId, idZona, carrera, grupo, hora_inicio, hora_fin],
             err3 => {
               if (err3) {
-                console.error(err3);
                 return res.status(500).json({
+                  ok: false,
                   message: "❌ Error al abrir la bitácora"
                 });
               }
+              const io = req.app.get("io");
 
-              return res.json({
+              io.emit("clase_activada");
+
+              return res.status(200).json({
+                ok: true,
                 message: "✅ Bitácora habilitada correctamente"
               });
             }
@@ -165,43 +165,41 @@ router.post("/abrir-clase", verificarSesion, soloRol(["DOCENTE"]), (req, res) =>
 });
 
 /* ======================================================
-   CERRAR BITÁCORA (MANUAL)
+   CERRAR BITÁCORA
 ====================================================== */
 router.post("/cerrar-clase", verificarSesion, soloRol(["DOCENTE"]), (req, res) => {
   const db = req.db;
   const docenteId = req.session.user.id;
 
-  // obtener la clase activa
   db.query(
     `SELECT id FROM clases WHERE estado='ACTIVA' AND id_docente=?`,
     [docenteId],
     (err, rows) => {
       if (err || !rows.length) {
         return res.status(400).json({
+          ok: false,
           message: "⚠️ No hay bitácora activa"
         });
       }
 
       const idClase = rows[0].id;
 
-      // 1️⃣ cerrar la clase
       db.query(
         `
         UPDATE clases
         SET estado='CERRADA',
-            fecha_fin = NOW() - INTERVAL 6 HOUR
+            fecha_fin = NOW() 
         WHERE id=?
         `,
         [idClase],
         err2 => {
           if (err2) {
-            console.error(err2);
             return res.status(500).json({
+              ok: false,
               message: "❌ Error al cerrar la bitácora"
             });
           }
 
-          // 2️⃣ cerrar salidas
           db.query(
             `
             UPDATE registros
@@ -211,19 +209,27 @@ router.post("/cerrar-clase", verificarSesion, soloRol(["DOCENTE"]), (req, res) =
             `,
             [idClase]
           );
-
-          return res.json({
+          const io = req.app.get("io");
+          io.emit("clase_cerrada")
+          
+          return res.status(200).json({
+            ok: true,
             message: "✅ Bitácora cerrada correctamente"
           });
+          
+          
+
         }
       );
     }
   );
 });
 
+/* ======================================================
+   OTROS ENDPOINTS
+====================================================== */
 router.get("/laboratorios/:carrera", verificarSesion, soloRol(["DOCENTE"]), (req, res) => {
   const db = req.db;
-  const carrera = req.params.carrera;
 
   db.query(
     `
@@ -232,7 +238,7 @@ router.get("/laboratorios/:carrera", verificarSesion, soloRol(["DOCENTE"]), (req
     WHERE tipo='LABORATORIO'
     AND carrera=?
     `,
-    [carrera],
+    [req.params.carrera],
     (err, rows) => {
       res.json(rows);
     }

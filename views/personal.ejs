@@ -200,12 +200,13 @@
             </button>
 
             <div class="dropdown-content" id="settingsMenu">
-                <button onclick="reportUI()">
+                <button onclick="location.href='/personal/reportar-problema'">
                     <i class="fa-solid fa-triangle-exclamation"></i>
                     <span>Reportar Problema</span>
                 </button>
 
-                <button onclick="checkSystem()">
+
+                <button onclick="location.href='/personal/estado-sistema'">
                     <i class="fa-solid fa-circle-info"></i>
                     <span>Estado del Sistema</span>
                 </button>
@@ -221,7 +222,8 @@
     </header>
 
     <!-- FORM -->
-    <form action="/enviar-soporte-personal" method="POST">
+    <form id="formSoporte" action="/personal/enviar-soporte-personal" method="POST">
+
         <div class="form-grid">
 
             <section>
@@ -233,15 +235,23 @@
                 <label>Correo Institucional</label>
                 <input value="<%= user.email %>" readonly style="background:#edf2f7">
 
+                <label>Asunto</label>
+                <input
+                    type="text"
+                    name="asunto"
+                    placeholder="Ej. Falla en equipo de cómputo"
+                    required
+                >
+
                 <label>Área o Departamento</label>
                 <select name="area" required>
-                    <option disabled selected>Seleccione área...</option>
-                    <option>Sistemas - Edificio J</option>
-                    <option>Control Escolar</option>
-                    <option>Recursos Humanos</option>
-                    <option>Dirección General</option>
-                    <option>Laboratorios Pesados</option>
-                    <option>Biblioteca</option>
+                    <option value="" disabled selected>Seleccione área...</option>
+                    <option value="Sistemas - Edificio J">Sistemas - Edificio J</option>
+                    <option value="Control Escolar">Control Escolar</option>
+                    <option value="Recursos Humanos">Recursos Humanos</option>
+                    <option value="Dirección General">Dirección General</option>
+                    <option value="Laboratorios Pesados">Laboratorios Pesados</option>
+                    <option value="Biblioteca">Biblioteca</option>
                 </select>
 
                 <label>Descripción de la Falla</label>
@@ -251,37 +261,38 @@
             <section>
                 <h3 class="section-title">Detalles de la Incidencia</h3>
 
-                <label>Tipo de Problema</label>
                 <select name="tipo_incidencia" required>
-                    <option disabled selected>Seleccione...</option>
-                    <option>Hardware</option>
-                    <option>Software</option>
-                    <option>Red</option>
-                    <option>Otro</option>
+                    <option value="" disabled selected>Seleccione...</option>
+                    <option value="Hardware">Hardware</option>
+                    <option value="Software">Software</option>
+                    <option value="Red">Red</option>
+                    <option value="Otro">Otro</option>
                 </select>
-
                 <label>Prioridad</label>
                 <select name="prioridad" required>
+                    <option value="" disabled selected>Seleccione...</option> 
                     <option>Baja</option>
-                    <option selected>Media</option>
+                    <option >Media</option>
                     <option>Alta</option>
                 </select>
 
                 <label>Tipo de Atención</label>
                 <select name="tipo_atencion" required>
+                    <option disabled selected>Seleccione...</option>
                     <option>Presencial</option>
                     <option>Remoto</option>
                 </select>
 
                 <label>Fecha sugerida</label>
                 <input type="date" name="fecha_cita" id="fecha_cita" required>
-
+                
                 <label>Turno</label>
                 <select name="turno" required>
-                    <option>Matutino</option>
-                    <option>Vespertino</option>
+                    <option value="" disabled selected>Seleccione...</option>
+                    <option value="Matutino">Matutino</option>
+                    <option value="Vespertino">Vespertino</option>
                 </select>
-            </section>
+            </section>    
 
         </div>
 
@@ -294,6 +305,9 @@
     </form>
 
 </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 
 <script>
     const cogButton = document.getElementById("cogButton");
@@ -320,6 +334,52 @@
     document.getElementById("fecha_cita").min =
         new Date().toISOString().split("T")[0];
 </script>
+
+    <script>
+        const form = document.getElementById("formSoporte");
+
+        form.addEventListener("submit", async (e) => {
+        e.preventDefault(); // 🚫 evita que navegue al JSON
+
+        const formData = new FormData(form);
+
+        try {
+            const res = await fetch(form.action, {
+            method: "POST",
+            body: formData
+            });
+
+            const data = await res.json();
+
+            if (data.ok) {
+            Swal.fire({
+                icon: "success",
+                title: "Registrado",
+                text: data.message,
+                confirmButtonText: "OK"
+            }).then(() => {
+                form.reset();
+            });
+            } else {
+            Swal.fire({
+                icon: "error",
+                title: "Error",
+                text: data.message,
+                confirmButtonText: "OK"
+            });
+            }
+
+        } catch (err) {
+            Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: "Error de conexión",
+            confirmButtonText: "OK"
+            });
+        }
+        });
+    </script>
+
 
 </body>
 </html>

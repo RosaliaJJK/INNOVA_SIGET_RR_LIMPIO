@@ -117,12 +117,13 @@
 
             <div class="dropdown-content" id="settingsMenu">
 
-                <button type="button" onclick="reportProblem()">
+                <button onclick="location.href='/personal/reportar-problema'">
                     <i class="fa-solid fa-triangle-exclamation"></i>
                     <span>Reportar Problema</span>
                 </button>
 
-                <button type="button" onclick="checkSystemStatus()">
+
+                <button onclick="location.href='/personal/estado-sistema'">
                     <i class="fa-solid fa-circle-info"></i>
                     <span>Estado del Sistema</span>
                 </button>
@@ -185,7 +186,7 @@
 
                         <label for="machineNumber">Número de Equipo</label>
                         <select id="machineNumber" required>
-                            <option value="">Seleccione equipo</option>
+                            <option option disabled selected="">Seleccione equipo</option>
                         </select>
 
                         <label>Observaciones</label>

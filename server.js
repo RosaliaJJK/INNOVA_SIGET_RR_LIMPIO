@@ -47,8 +47,8 @@ db.query("SELECT 1", err => {
 /* =========================
    MIDDLEWARES
 ========================= */
-app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
 app.use(
@@ -93,7 +93,7 @@ app.get("/", (req, res) => {
 io.on("connection", socket => {
 
   socket.on("join_lab", zonaId => {
-    io.to(`lab_${zonaId}`).emit("clase_cerrada");
+    socket.join(`lab_${zonaId}`);
     console.log("Socket unido a lab_", zonaId);
   });
 
@@ -106,8 +106,7 @@ setInterval(() => {
   db.query(
     `
     UPDATE clases
-    SET estado = 'CERRADA',
-        fecha_fin = NOW()
+    SET estado = 'CERRADA',fecha_fin = NOW()
     WHERE estado = 'ACTIVA'
       AND TIMESTAMP(fecha, hora_fin) <= NOW()
     `,
@@ -119,6 +118,26 @@ setInterval(() => {
 
       if (result.affectedRows > 0) {
         console.log("⏰ Bitácora cerrada en tiempo real");
+        
+        // 2️⃣ cerrar registros de alumnos
+        db.query(`
+          UPDATE registros r
+          JOIN clases c ON r.id_clase = c.id
+          SET r.hora_salida = NOW()
+          WHERE c.estado='CERRADA'
+            AND r.hora_salida IS NULL
+        `);
+
+        // 3️⃣ liberar máquinas
+        db.query(`
+          UPDATE maquinas m
+          JOIN registros r ON m.numero_equipo = r.numero_equipo
+          JOIN clases c ON r.id_clase = c.id
+          SET m.estado = 'LIBRE'
+          WHERE c.estado='CERRADA'
+        `);
+
+
         io.emit("clase_cerrada");
       }
     }

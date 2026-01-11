@@ -1,28 +1,39 @@
 const socket = io();
+let cierreIniciadoPorUsuario = false;
+
 
 // ---------- HABILITAR BITÁCORA ----------
-const formAbrir = document.getElementById("form-abrir-clase");
+const formAbrir = document.getElementById("formAbrirClase");
 
 if (formAbrir) {
-  formAbrir.addEventListener("submit", e => {
+  formAbrir.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    fetch("/docente/abrir-clase", {
-      method: "POST",
-      body: new FormData(formAbrir)
-    })
-    .then(res => res.json())
-    .then(data => {
-      if (data.message) {
-        Swal.fire("Aviso", data.message, "info")
-          .then(() => location.reload());
-      }
-    })
-    .catch(() => {
+    const formData = new FormData(formAbrir);
+
+    try {
+      const res = await fetch(formAbrir.action, {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await res.json();
+
+      Swal.fire({
+        icon: data.ok ? "success" : "warning",
+        title: data.ok ? "Bitácora activada" : "Atención",
+        text: data.message,
+        confirmButtonText: "OK"
+      }).then(() => {
+        if (data.ok) location.reload();
+      });
+
+    } catch (err) {
       Swal.fire("Error", "Error de conexión", "error");
-    });
+    }
   });
 }
+
 
 // ---------- TIEMPO REAL ----------
 socket.on("nuevo_registro", data => {
@@ -47,6 +58,8 @@ socket.on("nuevo_registro", data => {
 
 // ---------- CIERRE ----------
 socket.on("clase_cerrada", () => {
+    if (cierreIniciadoPorUsuario) return;
+
   Swal.fire("Aviso", "La bitácora se ha cerrado", "warning")
     .then(() => location.reload());
 });
@@ -97,8 +110,6 @@ document.getElementById("btnRegistrar")?.addEventListener("click", async () => {
   });
 
   const data = await res.json();
-  window.alert(result.message);
-
 
   if (data.error) {
     alert(data.error);
@@ -108,14 +119,21 @@ document.getElementById("btnRegistrar")?.addEventListener("click", async () => {
   }
 });
 
-document.getElementById("carrera").addEventListener("change", e => {
-  fetch(`/docente/laboratorios/${e.target.value}`)
-    .then(res => res.json())
-    .then(labs => {
-      const sel = document.getElementById("laboratorio");
-      sel.innerHTML = '<option value="">Seleccione laboratorio</option>';
-      labs.forEach(l => {
-        sel.innerHTML += `<option value="${l.id}">${l.nombre}</option>`;
+const carreraSelect = document.getElementById("carrera");
+
+if (carreraSelect) {
+  carreraSelect.addEventListener("change", e => {
+    fetch(`/docente/laboratorios/${e.target.value}`)
+      .then(res => res.json())
+      .then(labs => {
+        const sel = document.getElementById("laboratorio");
+        if (!sel) return;
+
+        sel.innerHTML = '<option value="">Seleccione laboratorio</option>';
+        labs.forEach(l => {
+          sel.innerHTML += `<option value="${l.id}">${l.nombre}</option>`;
+        });
       });
-    });
-});
+  });
+}
+

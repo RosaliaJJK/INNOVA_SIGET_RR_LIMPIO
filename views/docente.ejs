@@ -275,6 +275,62 @@
             border-top: 3px solid #22c55e;
             margin-bottom: 12px;
         }
+
+        .acciones-bitacora {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 25px;
+        }
+
+        .acciones-bitacora button {
+            width: 100%;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: background 0.3s ease, transform 0.2s ease;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+            transform: scale(1.02);
+        }
+
+        .btn-update {
+            background: white;
+            color: #0d6efd;
+            border: 1px solid #0d6efd;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .btn-update:hover {
+            background: #0d6efd;
+            color: white;
+            transform: scale(1.02);
+        }
+
+
             
     </style>
 </head>
@@ -298,7 +354,7 @@
                     <i class="fa-solid fa-triangle-exclamation"></i>
                     <span>Reportar Problema</span>
                 </button>
-                <button onclick="location.href='/estado-sistema'">
+                <button onclick="location.href='/personal/estado-sistema'">
                     <i class="fa-solid fa-circle-info"></i>
                     <span>Estado del Sistema</span>
                 </button>
@@ -317,7 +373,7 @@
 <section>
     <h3 class="section-title">1. Configuración del Acceso</h3>
 
-    <form action="/docente/abrir-clase" method="POST">
+    <form id="formAbrirClase" action="/docente/abrir-clase" method="POST">
 
     <label>Docente Responsable</label>
     <span class="docente-badge"><%= user.nombre %></span>
@@ -331,8 +387,8 @@
     -->
 
     <label>Carrera</label>
-    <select name="carrera" required>
-    <option disabled selected>Seleccione carrera...</option>
+    <select id="carrera" name="carrera" required>
+    <option disabled selected value="">Seleccione carrera...</option>
 
     <option value="Ingeniería en Sistemas Computacionales">Ingeniería en Sistemas Computacionales</option>
 
@@ -354,8 +410,8 @@
 
 
     <label>Laboratorio</label>
-    <select name="laboratorio" required>
-        <option disabled selected>Seleccione laboratorio...</option>
+    <select id="laboratorio" name="laboratorio" required>
+        <option disabled selected value="">Seleccione laboratorio...</option>
         <% laboratorios.forEach(l => { %>
         <option value="<%= l.id %>"><%= l.nombre %></option>
         <% }) %>
@@ -363,7 +419,7 @@
 
     <label>Grupo</label>
         <select name="grupo" required>
-        <option disabled selected>Seleccione grupo...</option>
+        <option disabled selected value="">Seleccione grupo...</option>
 
         <option value="1ISC11">1ISC11</option>
         <option value="1ISC12">1ISC12</option>
@@ -399,12 +455,26 @@
         <input type="time" name="hora_fin" required>
     </div>
 
-    <div style="display:flex; justify-content:space-between; margin-top:25px;">
-        <button class="btn-primary">HABILITAR ACCESO</button>
-        <button type="button" class="btn-save">
-        <i class="fas fa-save"></i> Borrador
+    <div class="acciones-bitacora">
+        <button type="submit" class="btn-primary">
+            HABILITAR ACCESO
         </button>
+
+
+        <button type="button" class="btn-update">
+            <i class="fas fa-rotate"></i> Actualizar
+        </button>
+
+        <button
+            id="btnCerrarClase"
+            type="button"
+            class="btn-danger"
+        >
+            <i class="fas fa-lock"></i> Cerrar Bitácora
+        </button>
+
     </div>
+
 
     </form>
 </section>
@@ -459,51 +529,72 @@
 </div>
 </div>
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="/js/docente.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/docente.js"></script>
+
+
 
     <script>
-    const socket = io();
-    const estado = document.getElementById("estadoClase");
-    const tbody = document.getElementById("studentRealtime");
+        const cogButton = document.getElementById("cogButton");
+        const menu = document.getElementById("settingsMenu");
 
-    
+        cogButton.onclick = (e) => {
+            e.stopPropagation();
+            menu.style.display = menu.style.display === "block" ? "none" : "block";
+        };
 
-    socket.on("clase_activada", () => {
-        estado.classList.remove("inactivo");
-        estado.classList.add("activo");
-        estado.querySelector(".texto").textContent = "Activo";
-    });
+        document.onclick = () => menu.style.display = "none";
 
-    socket.on("clase_cerrada", () => {
-        estado.classList.remove("activo");
-        estado.classList.add("inactivo");
-        estado.querySelector(".texto").textContent = "Inactivo";
-    });
+        function navAction(action) {
+            menu.style.display = "none";
+            console.log("Acción:", action);
+        }
+
+        function loadData() {
+            console.log("Conectando con el servidor...");
+        }
     </script>
 
-<!-- SweetAlert2 -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
 <script>
-    const cogButton = document.getElementById("cogButton");
-    const menu = document.getElementById("settingsMenu");
+document.getElementById("btnCerrarClase")?.addEventListener("click", async () => {
 
-    cogButton.onclick = (e) => {
-        e.stopPropagation();
-        menu.style.display = menu.style.display === "block" ? "none" : "block";
-    };
+    cierreIniciadoPorUsuario = true;
 
-    document.onclick = () => menu.style.display = "none";
+    const confirmacion = await Swal.fire({
+        title: "¿Cerrar Bitácora?",
+        text: "Se cerrará el acceso al laboratorio",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Sí, cerrar",
+        cancelButtonText: "Cancelar",
+        confirmButtonColor: "#ef4444"
+    });
 
-    function navAction(action) {
-        menu.style.display = "none";
-        console.log("Acción:", action);
+    if (!confirmacion.isConfirmed) {
+        cierreIniciadoPorUsuario = false;
+        return;
     }
 
-    function loadData() {
-        console.log("Conectando con el servidor...");
+    try {
+        const res = await fetch("/docente/cerrar-clase", {
+            method: "POST"
+        });
+
+        const data = await res.json();
+
+        Swal.fire({
+            icon: data.ok ? "success" : "warning",
+            title: data.ok ? "Cerrado" : "Atención",
+            text: data.message
+        }).then(() => {
+            if (data.ok) location.reload();
+        });
+
+    } catch (err) {
+        Swal.fire("Error", "No se pudo cerrar la bitácora", "error");
     }
+});
 </script>
 
 </body>
