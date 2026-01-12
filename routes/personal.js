@@ -127,7 +127,7 @@ router.post(
 
       return res.json({
         ok: true,
-        message: "Ticket generado correctamente"
+        message: "Registro generado correctamente"
       });
     }
   );
@@ -220,6 +220,85 @@ router.post(
     );
   }
 );
+
+
+/* ============================
+   DASHBOARD TÉCNICO
+============================ */
+router.get("/", (req, res) => {
+  const db = req.db;
+
+  const sql = `
+    SELECT 
+      rp.id,
+      sp.nombre AS solicitante,
+      rp.area,
+      rp.asunto AS problema,
+      rp.prioridad,
+      rp.estado
+    FROM reportar_problemas rp
+    JOIN soporte_personal sp ON rp.id_personal = sp.id
+    ORDER BY rp.id DESC
+  `;
+
+  db.query(sql, (err, incidencias) => {
+    if (err) {
+      console.error(err);
+      return res.send("Error al cargar incidencias");
+    }
+
+    res.render("personal/dashboard_tecnico", { incidencias });
+  });
+});
+
+/* ============================
+   ACTUALIZAR ESTADO INCIDENCIA
+============================ */
+router.put("/incidencia/:id", (req, res) => {
+  const db = req.db;
+  const { estado } = req.body;
+  const { id } = req.params;
+
+  const sql = `
+    UPDATE reportar_problemas
+    SET estado = ?
+    WHERE id = ?
+  `;
+
+  db.query(sql, [estado, id], err => {
+    if (err) {
+      console.error(err);
+      return res.json({ ok: false });
+    }
+
+    // 🔔 Actualización en tiempo real
+    const io = req.app.get("io");
+    io.emit("estado_actualizado");
+
+    res.json({ ok: true });
+  });
+});
+
+/* ============================
+   RESUMEN DE HOY
+============================ */
+router.get("/resumen-hoy", (req, res) => {
+  const db = req.db;
+
+  const sql = `
+    SELECT 
+      SUM(estado = 'pendiente') AS pendientes,
+      SUM(estado = 'resuelto') AS resueltas
+    FROM reportar_problemas
+    WHERE DATE(fecha) = CURDATE()
+  `;
+
+  db.query(sql, (err, result) => {
+    if (err) return res.json({ pendientes: 0, resueltas: 0 });
+
+    res.json(result[0]);
+  });
+});
 
 
 module.exports = router;

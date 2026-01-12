@@ -131,6 +131,7 @@ router.post('/login', (req, res) => {
   req.db.query(
     'SELECT * FROM usuarios WHERE email = ?',
     [email],
+    
     async (err, results) => {
       if (err || results.length === 0)
         return res.status(401).json({ message: 'Credenciales incorrectas' });

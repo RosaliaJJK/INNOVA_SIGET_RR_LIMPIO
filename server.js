@@ -78,10 +78,12 @@ app.use((req, res, next) => {
 ========================= */
 app.use("/auth", require("./routes/auth"));
 app.use("/", require("./routes/auth"));
-app.use("/api", require("./routes/api"));
 app.use("/alumno", require("./routes/alumno"));
 app.use("/docente", require("./routes/docente"));
 app.use("/personal", require("./routes/personal"));
+app.use("/mantenimiento", require("./routes/mantenimiento")); // 👈 ESTA
+
+
 
 app.get("/", (req, res) => {
   res.render("login");

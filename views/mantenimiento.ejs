@@ -232,6 +232,11 @@
     </style>
 </head>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="/js/mantenimiento.js"></script>
+
+
 <body>
 
 <div class="form-wrapper">
@@ -260,12 +265,7 @@
                     <i class="fa-solid fa-circle-info"></i>
                     Estado del Sistema
                 </button>
-
-                <button onclick="navAction('soluciones')">
-                    <i class="fa-solid fa-book"></i>
-                    Catálogo de Soluciones
-                </button>
-
+                
                 <hr>
 
                 <a href="/logout" class="logout">
@@ -282,22 +282,44 @@
         <!-- PANEL PRINCIPAL -->
         <main class="management-panel">
             <h3 class="panel-header">Incidencias Recientes</h3>
-
+            
             <div class="filter-bar">
-                <select><option>Todas las prioridades</option></select>
-                <select><option>Todos los estados</option></select>
-                <select><option>Todas las áreas</option></select>
+                <select id="filtroPrioridad">
+                <option value="TODAS">Todas las prioridades</option>
+                <option value="Alta">Alta</option>
+                <option value="Media">Media</option>
+                <option value="Baja">Baja</option>
+                </select>
+
+                <select id="filtroEstado">
+                <option value="TODOS">Todos los estados</option>
+                <option value="ABIERTA">Abierta</option>
+                <option value="PENDIENTE">Pendiente</option>
+                <option value="RESUELTA">Resuelta</option>
+                </select>
+
+                <select id="filtroArea">
+                <option value="TODAS">Todas las áreas</option>
+                <option value="Sistemas - Edificio J">Sistemas - Edificio J</option>
+                <option value="Control Escolar">Control Escolar</option>
+                <option value="Recursos Humanos">Recursos Humanos</option>
+                <option value="Dirección General">Dirección General</option>
+                <option value="Biblioteca">Biblioteca</option>
+                </select>
             </div>
+
 
             <div class="inline-fields" style="margin-bottom:15px;">
                 <button class="btn btn-primary" onclick="loadData()">
                     <i class="fas fa-sync-alt"></i> Actualizar
                 </button>
-                <button class="btn btn-danger">
+                
+                <button class="btn btn-danger" id="btnEliminar">
                     <i class="fas fa-trash-alt"></i> Eliminar
                 </button>
+
                 <!-- BOTÓN AGREGADO -->
-                <button class="btn btn-outline" onclick="openBitacoras()">
+                <button type="button" class="btn btn-outline" onclick="openBitacoras()">
                     <i class="fas fa-clipboard-list"></i> Bitácoras por Laboratorio
                 </button>
             </div>
@@ -306,6 +328,7 @@
                 <table id="incidencesTable">
                     <thead>
                         <tr>
+                            <th></th>
                             <th>ID</th>
                             <th>Solicitante</th>
                             <th>Área</th>
@@ -314,19 +337,35 @@
                             <th>Estado</th>
                         </tr>
                     </thead>
-                    <tbody id="tableBody">
-                        <tr>
-                            <td colspan="6" style="text-align:center; padding:30px; color:#999;">
-                                Esperando datos del sistema...
-                            </td>
-                        </tr>
-                    </tbody>
+                    <tbody>
+                        <% if (incidencias.length === 0) { %>
+                            <tr>
+                                <td colspan="7" style="text-align:center;">
+                                    No hay incidencias
+                                </td>
+                            </tr>
+                        <% } %>
+
+                          <% incidencias.forEach(i => { %>
+                                <tr data-id="<%= i.id %>">
+                                <td><input type="radio" name="seleccion"></td>
+                                <td><%= i.id %></td>
+                                <td><%= i.solicitante %></td>
+                                <td><%= i.area %></td>
+                                <td><%= i.descripcion %></td>
+                                <td><%= i.prioridad %></td>
+                                <td><%= i.estado %></td>
+                                </tr>
+                            <% }) %>
+                        </tbody>
+
                 </table>
             </div>
 
-            <button class="btn btn-secondary" style="margin-top:20px;">
+            <button class="btn btn-secondary" id="btnPdf">
                 <i class="fas fa-file-pdf"></i> Exportar PDF
             </button>
+
         </main>
 
         <!-- PANEL LATERAL -->
@@ -334,50 +373,44 @@
 
             <div class="performance-card">
                 <h4>📊 Resumen de Hoy</h4>
-                <p>Pendientes: <span id="countAssigned">0</span></p>
-                <p>Resueltas: <span id="countResolved">0</span></p>
+                <p>Pendientes: <strong><span id="pendientes">0</span></strong></p>
+                <p>Resueltas: <strong><span id="resueltas">0</span></strong></p>
+
+
             </div>
 
             <h3 class="panel-header">Configurar Disponibilidad</h3>
-            <form>
-                <label>Fecha</label>
-                <input type="date" required>
 
-                <div class="inline-fields">
-                    <div>
-                        <label>Hora Inicio</label>
-                        <input type="time" required>
-                    </div>
-                    <div>
-                        <label>Hora Fin</label>
-                        <input type="time" required>
-                    </div>
-                </div>
+                <form action="/mantenimiento/disponibilidad" method="POST">
 
+                <label>Día</label>
+                <input type="date" name="dia" required>
+                
                 <button class="btn btn-primary" style="margin-top:10px;">
                     Publicar Horario
                 </button>
+            </form>
+
             </form>
 
             <h3 class="panel-header" style="margin-top:25px;">
                 Gestión de Estado
             </h3>
 
-            <form>
-                <label>ID Incidencia</label>
-                <input type="text" readonly>
+            <label>ID Incidencia</label>
+            <input type="number" id="estadoId" required>
 
-                <label>Nuevo Estado</label>
-                <select required>
-                    <option>Asignado</option>
-                    <option>Resuelto</option>
-                    <option>Cerrado</option>
-                </select>
+            <label>Nuevo Estado</label>
+            <select id="estadoNuevo">
+                <option value="ABIERTA">Abierta</option>
+                <option value="PENDIENTE">Pendiente</option>
+                <option value="RESUELTA">Resuelta</option>
+            </select>
 
-                <button class="btn btn-secondary" style="margin-top:10px;">
-                    Actualizar Estado
-                </button>
-            </form>
+            <button class="btn btn-secondary" onclick="actualizarEstadoDesdePanel()">
+                Actualizar Estado
+            </button>
+
 
         </aside>
 
@@ -452,6 +485,10 @@
     function closeBitacoras() {
         document.getElementById("bitacoraModal").style.display = "none";
     }
+    function loadData() {
+    cargarIncidencias();
+    }
+
 </script>
 
 </body>

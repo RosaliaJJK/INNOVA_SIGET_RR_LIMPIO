@@ -18,55 +18,6 @@ router.get(
   }
 );
 
-/*
-  CONECTAR ALUMNO AL TIEMPO REAL
-
-router.post(
-  "/conectar",
-  verificarSesion,
-  soloRol(["ALUMNO"]),
-  (req, res) => {
-    const db = req.db;
-    const { machineNumber, observation } = req.body;
-
-    // 1️⃣ Buscar clase ABIERTA
-    db.query(
-      `SELECT id FROM clases_activas 
-       WHERE estatus = 'ABIERTA' 
-       ORDER BY id DESC 
-       LIMIT 1`,
-      (err, rows) => {
-        if (err) return res.status(500).send("Error BD");
-
-        if (rows.length === 0) {
-          return res.status(403).send("No hay clase activa");
-        }
-
-        const idClase = rows[0].id;
-
-        // 2️⃣ Insertar bitácora
-        db.query(
-          `INSERT INTO bitacoras 
-          (id_clase, id_alumno, equipo_numero, observaciones_iniciales)
-          VALUES (?, ?, ?, ?)`,
-          [idClase, req.session.user.id, machineNumber, observation],
-          err => {
-            if (err) return res.status(500).send("Error al registrar");
-
-            // 3️⃣ Avisar en tiempo real
-            const io = req.app.get("io");
-            io.emit("nuevo_registro", {
-              alumno: req.session.user.nombre,
-              equipo: machineNumber
-            });
-
-            res.redirect("/alumno");
-          }
-        );
-      }
-    );
-  }
-);*/
 
 
 router.get("/estado/:zonaId", verificarSesion, (req, res) => {
@@ -102,27 +53,25 @@ router.post(
   upload.none(),
   (req, res) => {
 
-    const db = req.db; // ✅ USAR LA MISMA CONEXIÓN
+    const db = req.db;
     const io = req.app.get("io");
     const alumnoId = req.session.user.id;
     const { id_clase, id_zona, numero_equipo, observaciones } = req.body;
 
+    // 🔒 VALIDACIÓN
+    if (!id_clase || !id_zona || !numero_equipo || !observaciones) {
+      return res.json({
+        ok: false,
+        message: "⚠️ Todos los campos son obligatorios"
+      });
+    }
 
-      // 🔒 VALIDACIÓN BACKEND (OBLIGATORIA)
-      if (!id_clase || !id_zona || !numero_equipo || !observaciones) {
-        return res.json({
-          ok: false,
-          message: "⚠️ Todos los campos son obligatorios"
-        });
-      }
-   
     // 🔒 evitar doble registro
     db.query(
       `SELECT id FROM registros WHERE id_clase=? AND id_alumno=?`,
       [id_clase, alumnoId],
       (err, existe) => {
         if (err) {
-          console.error("ERROR SELECT:", err);
           return res.json({ ok:false, message:"Error BD" });
         }
 
@@ -130,37 +79,55 @@ router.post(
           return res.json({ ok:false, message:"Ya estás registrado" });
         }
 
-        // 1️⃣ insertar registro
+        // 1️⃣ OCUPAR MÁQUINA (PRIMERO)
         db.query(
-          `INSERT INTO registros
-           (id_clase, id_alumno, numero_equipo, observaciones)
-           VALUES (?, ?, ?, ?)`,
-          [id_clase, alumnoId, numero_equipo, observaciones],
-          err => {
+          `
+          UPDATE maquinas
+          SET estado = 'OCUPADA'
+          WHERE id_zona = ?
+            AND numero_equipo = ?
+            AND estado = 'LIBRE'
+          `,
+          [id_zona, numero_equipo],
+          (err, result) => {
             if (err) {
-              console.error("ERROR INSERT:", err);
-              return res.json({ ok:false, message:"Error al registrar" });
+              return res.json({ ok:false, message:"Error al ocupar máquina" });
             }
 
-            // 2️⃣ ocupar máquina
+            // 🚨 ya ocupada
+            if (result.affectedRows === 0) {
+              return res.json({
+                ok:false,
+                message:"⚠️ La máquina ya fue ocupada por otro alumno"
+              });
+            }
+
+            // 2️⃣ INSERTAR REGISTRO
             db.query(
-              `UPDATE maquinas
-               SET estado = 'OCUPADA'
-               WHERE id_zona = ? AND numero_equipo = ?`,
-              [id_zona, numero_equipo],
+              `
+              INSERT INTO registros
+              (id_clase, id_alumno, numero_equipo, observaciones)
+              VALUES (?, ?, ?, ?)
+              `,
+              [id_clase, alumnoId, numero_equipo, observaciones],
               err => {
                 if (err) {
-                  console.error("ERROR UPDATE MAQUINA:", err);
-                  return res.json({ ok:false, message:"Error máquina" });
+                  // 🔙 rollback
+                  db.query(
+                    `UPDATE maquinas
+                     SET estado='LIBRE'
+                     WHERE id_zona=? AND numero_equipo=?`,
+                    [id_zona, numero_equipo]
+                  );
+
+                  return res.json({ ok:false, message:"Error al registrar" });
                 }
 
-                // 🔔 tiempo real
                 io.to(`lab_${id_zona}`).emit("nuevo_registro", {
                   alumno: req.session.user.nombre,
                   numero_equipo
                 });
 
-                // ✅ RESPUESTA FINAL (ANTES NO LLEGABA)
                 res.json({ ok:true });
               }
             );
@@ -170,6 +137,7 @@ router.post(
     );
   }
 );
+
 
 
 
@@ -297,21 +265,26 @@ router.post(
             if (err) {
               return res.json({ ok:false, message:"Error al actualizar" });
             }
+            if (maquinaAnterior !== numero_equipo) {
 
-            // liberar máquina anterior
-            db.query(
-              `UPDATE maquinas SET estado = 'LIBRE'
-               WHERE id_zona = ? AND numero_equipo = ?`,
-              [id_zona, maquinaAnterior]
-            );
+              // liberar máquina anterior
+              db.query(
+                `UPDATE maquinas
+                SET estado = 'LIBRE'
+                WHERE id_zona = ? AND numero_equipo = ?`,
+                [id_zona, maquinaAnterior]
+              );
 
-            // ocupar nueva máquina
-            db.query(
-              `UPDATE maquinas SET estado = 'OCUPADA'
-               WHERE id_zona = ? AND numero_equipo = ?`,
-              [id_zona, numero_equipo]
-            );
-
+              // ocupar nueva máquina (solo si estaba libre)
+              db.query(
+                `UPDATE maquinas
+                SET estado = 'OCUPADA'
+                WHERE id_zona = ?
+                  AND numero_equipo = ?
+                  AND estado = 'LIBRE'`,
+                [id_zona, numero_equipo]
+              );
+            }
             const io = req.app.get("io");
             io.to(`lab_${id_zona}`).emit("registro_actualizado", {
               alumno: req.session.user.nombre,
@@ -326,67 +299,6 @@ router.post(
   }
 );
 
-
-/*
-router.post("/alumno/registrar", verificarSesion, soloRol(["ALUMNO"]), (req, res) => {
-  const db = req.db;
-  const { numero_equipo, observaciones } = req.body;
-  const idAlumno = req.session.user.id;
-
-  if (!numero_equipo || !observaciones) {
-    return res.status(400).json({
-      message: "⚠️ Todos los campos son obligatorios"
-    });
-  }
-
-  // obtener clase activa
-  db.query(
-    `SELECT id FROM clases WHERE estado='ACTIVA'`,
-    (err, rows) => {
-      if (!rows.length) {
-        return res.status(400).json({
-          message: "⚠️ No hay clase activa"
-        });
-      }
-
-      const idClase = rows[0].id;
-
-      // insertar registro
-      db.query(
-        `
-        INSERT INTO registros (id_clase, id_alumno, numero_equipo, observaciones)
-        VALUES (?, ?, ?, ?)
-        `,
-        [idClase, idAlumno, numero_equipo, observaciones],
-        err2 => {
-          if (err2) {
-            console.error(err2);
-            return res.status(500).json({
-              message: "❌ Error al registrar entrada"
-            });
-          }
-
-          // marcar máquina ocupada
-          db.query(
-            `
-            UPDATE maquinas
-            SET estado = 'OCUPADA'
-            WHERE numero_equipo = ?
-            `,
-            [numero_equipo]
-          );
-          
-
-          return res.json({
-            message: "✅ Entrada registrada correctamente"
-          });
-        }
-      );
-    }
-  );
-});
-
-*/
 
 
 module.exports = router;

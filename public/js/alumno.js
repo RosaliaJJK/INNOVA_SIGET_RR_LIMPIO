@@ -1,3 +1,4 @@
+let alumnoRegistrado = false;
 const socket = io();
 const form = document.getElementById("form-registro");
 
@@ -19,7 +20,7 @@ let claseActual = null;
 
 /* =========================
    CONTROL DEL BOTÓN (UNA SOLA VEZ)
-========================= */
+========================= 
 registerButton.disabled = true;
 
 function validarFormulario() {
@@ -28,15 +29,15 @@ function validarFormulario() {
 }
 
 machineNumber.addEventListener("change", validarFormulario);
-observation.addEventListener("input", validarFormulario);
+observation.addEventListener("input", validarFormulario);*/
 
 /* =========================
    BLOQUEAR SELECCIÓN INICIAL
 ========================= */
 function bloquearSeleccionInicial() {
   zonaSelect.disabled = true;
-  selectCarrera.disabled = true;
-  selectGrupo.disabled = true;
+  //selectCarrera.disabled = true;
+  //selectGrupo.disabled = true;
 }
 
 /* =========================
@@ -56,7 +57,6 @@ fetch("/alumno/laboratorios-activos")
 ========================= */
 zonaSelect.addEventListener("change", () => {
   const zonaId = zonaSelect.value;
-  registerButton.disabled = true;
   claseActual = null;
 
   selectCarrera.innerHTML = "";
@@ -81,6 +81,10 @@ zonaSelect.addEventListener("change", () => {
       selectCarrera.innerHTML = `<option>${claseActual.carrera}</option>`;
       selectGrupo.innerHTML = `<option>${claseActual.grupo}</option>`;
 
+      document.getElementById("careerGroupSection").style.display = "block";
+      selectCarrera.disabled = true;
+      selectGrupo.disabled = true;
+      
       labInfo.textContent = claseActual.laboratorio;
       docenteInfo.textContent = claseActual.docente;
 
@@ -107,8 +111,7 @@ zonaSelect.addEventListener("change", () => {
 function cargarMaquinas(idZona) {
   machineNumber.innerHTML =
     `<option value="">Seleccione equipo</option>`;
-    registerButton.disabled = true;  
-
+    
   fetch(`/alumno/api/maquinas/${idZona}`)
     .then(res => res.json())
     .then(data => {
@@ -139,22 +142,97 @@ function cargarMaquinas(idZona) {
 form.addEventListener("submit", e => {
   e.preventDefault();
 
+  // 🛑 Validaciones obligatorias
   if (!claseActual) {
     Swal.fire("Aviso", "No hay clase activa", "warning");
     return;
   }
 
+  if (!zonaSelect.value) {
+    Swal.fire("Campos incompletos", "Seleccione un laboratorio", "warning");
+    return;
+  }
+
   if (!machineNumber.value) {
-    Swal.fire("Aviso", "Selecciona una máquina", "warning");
+    Swal.fire("Campos incompletos", "Seleccione una máquina", "warning");
     return;
   }
 
   if (!observation.value.trim()) {
-    Swal.fire("Aviso", "Debes escribir una observación", "warning");
+    Swal.fire(
+      "Campos incompletos",
+      "Debe escribir una observación",
+      "warning"
+    );
     return;
   }
 
+  // ✅ SOLO SI TODO ESTÁ BIEN
   fetch("/alumno/registrar", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      id_clase: claseActual.id,
+      id_zona: zonaSelect.value,
+      numero_equipo: machineNumber.value,
+      observaciones: observation.value.trim()
+    })
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (!data.ok) {
+        Swal.fire("Aviso", data.message, "warning");
+        return;
+      }
+
+      Swal.fire("Registrado", "Entrada registrada correctamente", "success");
+
+      alumnoRegistrado = true; // ✅ YA REGISTRADO
+      
+      // limpiar
+      observation.value = "";
+      registerButton.disabled = true;
+
+      // refrescar máquinas
+      cargarMaquinas(zonaSelect.value);
+    });
+});
+
+
+
+/* =========================
+   ACTUALIZAR OBSERVACIÓN
+========================= */
+const btnUpdate = document.querySelector(".btn-update");
+if (btnUpdate) {
+  btnUpdate.addEventListener("click", () => {
+
+  if (!claseActual) {
+    Swal.fire("Aviso", "No hay clase activa", "warning");
+    return;
+  }
+
+  // 🔴 NO REGISTRADO
+  if (!alumnoRegistrado) {
+    Swal.fire(
+      "No registrado",
+      "Debes registrar tu entrada antes de actualizar",
+      "warning"
+    );
+    return;
+  }
+
+  // 🔴 CAMPOS VACÍOS
+  if (!machineNumber.value || !observation.value.trim()) {
+    Swal.fire(
+      "Campos incompletos",
+      "Para actualizar debes llenar todos los campos",
+      "warning"
+    );
+    return;
+  }
+
+  fetch("/alumno/actualizar", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -167,50 +245,17 @@ form.addEventListener("submit", e => {
   .then(res => res.json())
   .then(data => {
     if (!data.ok) {
-      Swal.fire("Aviso", data.message, "warning");
+      Swal.fire("Error", data.message, "error");
       return;
     }
 
-    Swal.fire("Registrado", "Registro exitoso", "success");
-    registerButton.disabled = true;
-    observation.value = ""; // limpiar
-    cargarMaquinas(zonaSelect.value);
-  });
-});
-
-
-
-/* =========================
-   ACTUALIZAR OBSERVACIÓN
-========================= */
-document.querySelector(".btn-update").addEventListener("click", () => {
-
-  if (!claseActual) return;
-
-  fetch("/alumno/actualizar", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      id_clase: claseActual.id,
-      id_zona: zonaSelect.value,
-      numero_equipo: machineNumber.value,
-      observaciones: observation.value
-    })
-  })
-    .then(data => {
-    const errorBox = document.getElementById("errorObservacion");
-
-    if (!data.ok) {
-      errorBox.textContent = data.message || "No se pudo actualizar";
-      return;
-    }
-
-    errorBox.textContent = "";
     Swal.fire("Actualizado", "Datos actualizados correctamente", "success");
+    observation.value = "";
     cargarMaquinas(zonaSelect.value);
   });
 
 });
+}
 
 
 /* =========================
@@ -227,4 +272,50 @@ socket.on("clase_cerrada", () => {
   }).then(() => {
     location.reload();
   });
+});
+/*
+
+if (zonaSelect) {
+  zonaSelect.addEventListener("change", async () => {
+    const zonaId = zonaSelect.value;
+    if (!zonaId) return;
+
+    const res = await fetch(`/alumno/clase-activa/${zonaId}`);
+    const data = await res.json();
+
+    if (!data.activa) {
+      Swal.fire(
+        "Sin clase activa",
+        "Este laboratorio no tiene clase activa",
+        "warning"
+      );
+      return;
+    }
+
+    // 🟢 Mostrar sección oculta
+    document.getElementById("careerGroupSection").style.display = "block";
+    document.getElementById("machineTitle").style.display = "block";
+    document.getElementById("registrationContent").style.display = "grid";
+
+    // 🟢 Mostrar info
+    document.getElementById("labInfo").textContent = data.clase.laboratorio;
+    document.getElementById("docenteInfo").textContent = data.clase.docente;
+
+    // 🟢 Guardar IDs ocultos (si ya los usas)
+    window.ID_CLASE = data.clase.id;
+    window.ID_ZONA = zonaId;
+  });
+}*/
+
+
+socket.on("nuevo_registro", () => {
+  if (zonaSelect.value) {
+    cargarMaquinas(zonaSelect.value);
+  }
+});
+
+socket.on("registro_actualizado", () => {
+  if (zonaSelect.value) {
+    cargarMaquinas(zonaSelect.value);
+  }
 });

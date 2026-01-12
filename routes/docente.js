@@ -74,7 +74,7 @@ router.get("/", verificarSesion, soloRol(["DOCENTE"]), (req, res) => {
           if (err2) {
             return res.status(500).json({
               ok: false,
-              message: "❌ Error al cargar registros"
+              message: " Error al cargar registros"
             });
           }
 
@@ -119,7 +119,7 @@ router.post("/abrir-clase", verificarSesion, soloRol(["DOCENTE"]), upload.none()
       if (r1.length) {
         return res.status(400).json({
           ok: false,
-          message: "⚠️ Ya tienes una bitácora activa"
+          message: " Ya tienes una bitácora activa"
         });
       }
 
@@ -130,7 +130,7 @@ router.post("/abrir-clase", verificarSesion, soloRol(["DOCENTE"]), upload.none()
           if (r2.length) {
             return res.status(400).json({
               ok: false,
-              message: "⚠️ El laboratorio ya está en uso"
+              message: " El laboratorio ya está en uso"
             });
           }
 
@@ -145,7 +145,7 @@ router.post("/abrir-clase", verificarSesion, soloRol(["DOCENTE"]), upload.none()
               if (err3) {
                 return res.status(500).json({
                   ok: false,
-                  message: "❌ Error al abrir la bitácora"
+                  message: " Error al abrir la bitácora"
                 });
               }
               const io = req.app.get("io");
@@ -154,7 +154,7 @@ router.post("/abrir-clase", verificarSesion, soloRol(["DOCENTE"]), upload.none()
 
               return res.status(200).json({
                 ok: true,
-                message: "✅ Bitácora habilitada correctamente"
+                message: " Bitácora habilitada correctamente"
               });
             }
           );
@@ -171,24 +171,27 @@ router.post("/cerrar-clase", verificarSesion, soloRol(["DOCENTE"]), (req, res) =
   const db = req.db;
   const docenteId = req.session.user.id;
 
+  // 1️⃣ obtener clase activa del docente
   db.query(
-    `SELECT id FROM clases WHERE estado='ACTIVA' AND id_docente=?`,
+    `SELECT id, id_zona FROM clases WHERE estado='ACTIVA' AND id_docente=?`,
     [docenteId],
     (err, rows) => {
       if (err || !rows.length) {
         return res.status(400).json({
           ok: false,
-          message: "⚠️ No hay bitácora activa"
+          message: "No hay bitácora activa"
         });
       }
 
       const idClase = rows[0].id;
+      const idZona = rows[0].id_zona;
 
+      // 2️⃣ cerrar clase
       db.query(
         `
         UPDATE clases
         SET estado='CERRADA',
-            fecha_fin = NOW() 
+            fecha_fin = NOW()
         WHERE id=?
         `,
         [idClase],
@@ -196,10 +199,11 @@ router.post("/cerrar-clase", verificarSesion, soloRol(["DOCENTE"]), (req, res) =
           if (err2) {
             return res.status(500).json({
               ok: false,
-              message: "❌ Error al cerrar la bitácora"
+              message: "Error al cerrar la bitácora"
             });
           }
 
+          // 3️⃣ cerrar registros abiertos
           db.query(
             `
             UPDATE registros
@@ -209,21 +213,36 @@ router.post("/cerrar-clase", verificarSesion, soloRol(["DOCENTE"]), (req, res) =
             `,
             [idClase]
           );
+
+          // 🔓 4️⃣ LIBERAR TODAS LAS MÁQUINAS DEL LABORATORIO
+          db.query(
+            `
+            UPDATE maquinas
+            SET estado = 'LIBRE'
+            WHERE id_zona = ?
+            `,
+            [idZona],
+            err3 => {
+              if (err3) {
+                console.error("❌ Error liberando máquinas:", err3);
+              }
+            }
+          );
+
+          // 🔔 5️⃣ sockets
           const io = req.app.get("io");
-          io.emit("clase_cerrada")
-          
+          io.emit("clase_cerrada");
+
           return res.status(200).json({
             ok: true,
-            message: "✅ Bitácora cerrada correctamente"
+            message: "Bitácora cerrada correctamente"
           });
-          
-          
-
         }
       );
     }
   );
 });
+
 
 /* ======================================================
    OTROS ENDPOINTS

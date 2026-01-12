@@ -157,16 +157,18 @@
             <option value="">Seleccione laboratorio</option>
             </select>-->
 
-            <label for="studentCareer">Carrera</label>
-            <select id="selectCarrera" name="studentCareer" required></select>
+            <div id="careerGroupSection" style="display:none;">
+                <label for="studentCareer">Carrera</label>
+                <select id="selectCarrera" name="studentCareer"></select>
 
-            <label for="studentGroup">Grupo</label>
-            <select id="selectGrupo" name="studentGroup" required></select>
+                <label for="studentGroup">Grupo</label>
+                <select id="selectGrupo" name="studentGroup"></select>
+            </div>
 
-
-            <div id="statusMessage" class="status-disabled">
+            <div id="statusMessage" class="status-disabled" style="display:none;">
                 Seleccione sus datos para verificar acceso.
             </div>
+
 
             <h3 class="section-title" id="machineTitle" style="display:none;">
                 2. Datos de Bitácora
@@ -253,6 +255,41 @@
             console.log("Conectando con el servidor...");
         }
     </script>
+
+    <script>
+        async function loadData() {
+        const res = await fetch("/mantenimiento/api/incidencias");
+        const data = await res.json();
+
+        const tbody = document.getElementById("tableBody");
+        tbody.innerHTML = "";
+
+        if (data.length === 0) {
+            tbody.innerHTML = `
+            <tr>
+                <td colspan="6" style="text-align:center;">No hay incidencias</td>
+            </tr>`;
+            return;
+        }
+
+        data.forEach(i => {
+            tbody.innerHTML += `
+            <tr>
+                <td>${i.id}</td>
+                <td>${i.solicitante}</td>
+                <td>${i.area}</td>
+                <td>${i.problema}</td>
+                <td>${i.prioridad}</td>
+                <td>${i.estado}</td>
+            </tr>
+            `;
+        });
+        }
+
+        // cargar automáticamente
+        loadData();
+    </script>
+
 
 </body>
 </html>
