@@ -358,11 +358,5 @@ router.post("/actualizar-hora", verificarSesion, async (req, res) => {
   });
 });
 
-// routes/docente.js
-router.get("/solicitud", verificarSesion, (req, res) => {
-    res.render("docente_solicitud", {
-        user: req.session.user
-    });
-});
 
 module.exports = router;
