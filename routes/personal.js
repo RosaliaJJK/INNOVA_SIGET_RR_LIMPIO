@@ -300,5 +300,37 @@ router.get("/resumen-hoy", (req, res) => {
   });
 });
 
+router.post("/enviar-soporte-personal", async (req, res) => {
+  try {
+    const [result] = await pool.query(
+      `INSERT INTO tickets 
+       (nombre, correo, asunto, area, descripcion, prioridad, tipo_atencion)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        req.user.nombre,
+        req.user.email,
+        req.body.asunto,
+        req.body.area,
+        req.body.descripcion,
+        req.body.prioridad,
+        req.body.tipo_atencion
+      ]
+    );
+
+    res.json({
+      ok: true,
+      message: "Ticket generado correctamente",
+      id: result.insertId   // 👈 FOLIO
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      message: "Error al generar el ticket"
+    });
+  }
+});
+
+
 
 module.exports = router;

@@ -146,6 +146,11 @@ setInterval(() => {
   );
 }, 1000); // cada 1 segundo
 
+
+io.on("connection", socket => {
+  console.log("🟢 Docente conectado:", socket.id);
+});
+
 /* =========================
    SERVIDOR
 ========================= */

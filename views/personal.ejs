@@ -186,6 +186,8 @@
     </style>
 </head>
 
+
+
 <body>
 
 <div class="form-card">
@@ -292,6 +294,7 @@
                     <option value="Matutino">Matutino</option>
                     <option value="Vespertino">Vespertino</option>
                 </select>
+
             </section>    
 
         </div>
@@ -339,7 +342,7 @@
         const form = document.getElementById("formSoporte");
 
         form.addEventListener("submit", async (e) => {
-        e.preventDefault(); // 🚫 evita que navegue al JSON
+        e.preventDefault();
 
         const formData = new FormData(form);
 
@@ -351,34 +354,109 @@
 
             const data = await res.json();
 
-            if (data.ok) {
-            Swal.fire({
-                icon: "success",
-                title: "Registrado",
-                text: data.message,
-                confirmButtonText: "OK"
-            }).then(() => {
-                form.reset();
-            });
-            } else {
-            Swal.fire({
-                icon: "error",
-                title: "Error",
-                text: data.message,
-                confirmButtonText: "OK"
-            });
+            if (!data.ok) {
+            Swal.fire("Error", data.message, "error");
+            return;
             }
 
-        } catch (err) {
-            Swal.fire({
-            icon: "error",
-            title: "Error",
-            text: "Error de conexión",
-            confirmButtonText: "OK"
+            // ✅ Generar PDF con el folio real
+            generarPDF({
+            folio: data.id,
+            nombre: "<%= user.nombre %>",
+            correo: "<%= user.email %>",
+            asunto: formData.get("asunto"),
+            area: formData.get("area"),
+            descripcion: formData.get("descripcion"),
+            prioridad: formData.get("prioridad"),
+            tipo: formData.get("tipo_atencion")
             });
+
+            Swal.fire("Éxito", "Ticket generado y Registrado Correctamente", "success");
+            form.reset();
+
+        } catch (err) {
+            Swal.fire("Error", "Error de conexión", "error");
         }
         });
     </script>
+
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+        <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+       
+        <script src="/js/personal.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+        <script>
+            flatpickr("#fecha_cita", {
+                minDate: "today",
+                disable: [
+                function(date) {
+                    // se deshabilita TODO, luego solo habilitamos lo permitido
+                    return true;
+                }
+                ]
+            });
+        </script>
+
+        <script>
+            document.getElementById("formTicket").addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const form = e.target;
+            const data = new FormData(form);
+
+            // 1️⃣ Enviar ticket al servidor
+            const res = await fetch("/soporte/ticket", {
+                method: "POST",
+                body: data
+            });
+
+            const result = await res.json();
+
+            if (!result.ok) {
+                alert("Error al generar ticket");
+                return;
+            }
+
+            // 2️⃣ Generar PDF
+            generarPDF({
+                folio: result.id,
+                nombre: data.get("nombre"),
+                correo: data.get("correo"),
+                asunto: data.get("asunto"),
+                area: data.get("area"),
+                descripcion: data.get("descripcion"),
+                prioridad: data.get("prioridad"),
+                tipo: data.get("tipo_atencion")
+            });
+
+            form.reset();
+            });
+        </script>
+
+        <script>
+            function generarPDF(ticket) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            doc.setFontSize(16);
+            doc.text("Ticket de Soporte Técnico", 14, 20);
+
+            doc.setFontSize(11);
+            doc.text(`Folio: ${ticket.folio}`, 14, 30);
+            doc.text(`Nombre: ${ticket.nombre}`, 14, 38);
+            doc.text(`Correo: ${ticket.correo}`, 14, 46);
+            doc.text(`Área: ${ticket.area}`, 14, 54);
+            doc.text(`Asunto: ${ticket.asunto}`, 14, 62);
+            doc.text(`Prioridad: ${ticket.prioridad}`, 14, 70);
+            doc.text(`Tipo de atención: ${ticket.tipo}`, 14, 78);
+
+            doc.text("Descripción:", 14, 90);
+            doc.text(ticket.descripcion, 14, 98, { maxWidth: 180 });
+
+            doc.save(`ticket_${ticket.folio}.pdf`);
+            }
+        </script>
 
 
 </body>

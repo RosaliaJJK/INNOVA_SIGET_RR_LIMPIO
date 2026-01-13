@@ -80,6 +80,17 @@ router.get("/api/incidencias", async (req, res) => {
   res.json(rows);
 });
 
+
+router.get("/api/disponibilidad", async (req, res) => {
+  const db = req.db.promise();
+  const [rows] = await db.query(
+    "SELECT dia_semana FROM disponibilidad_soporte WHERE activo = 1"
+  );
+
+  res.json(rows.map(r => r.dia_semana));
+});
+
+
 router.post(
   "/estado",
   verificarSesion,
@@ -94,7 +105,8 @@ router.post(
       [nuevo_estado, id_ticket]
     );
 
-    io.emit("incidencia_actualizada"); // 🔴 TIEMPO REAL
+    io.emit("resumen_actualizado"); // 👈 NUEVO
+    io.emit("incidencia_actualizada");
 
     res.json({ success: true });
   }
@@ -104,20 +116,96 @@ router.post(
 // ===============================
 // ELIMINAR INCIDENCIA
 // ===============================
-router.delete("/:id", verificarSesion, async (req, res) => {
-  const db = req.db.promise();
+router.delete("/:id", async (req, res) => {
+  const { id } = req.params;
+  const db = req.app.get("db");
+
   try {
-    await db.query(
+    await db.promise().query(
       "DELETE FROM soporte_personal WHERE id = ?",
-      [req.params.id]
+      [id]
     );
-    res.json({ success: true });
+
+    // 🔔 tiempo real (opcional pero recomendado)
+    const io = req.app.get("io");
+    io.emit("resumen_actualizado"); // 👈 NUEVO
+    io.emit("incidencia_actualizada");
+    
+
+    res.json({ ok: true });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "No se pudo eliminar" });
+    console.error("❌ Error eliminando incidencia:", err);
+    res.status(500).json({ error: "Error al eliminar" });
   }
 });
 
+router.post("/disponibilidad", async (req, res) => {
+  const db = req.db.promise();
+  const { dias } = req.body;
+
+  // Borra configuración anterior
+  await db.query("DELETE FROM disponibilidad_soporte");
+
+  // Guarda los nuevos días
+  if (dias && dias.length) {
+    for (const dia of dias) {
+      await db.query(
+        "INSERT INTO disponibilidad_soporte (dia_semana) VALUES (?)",
+        [dia]
+      );
+    }
+  }
+
+  res.redirect("/mantenimiento");
+});
+
+// ===============================
+// OBTENER LABORATORIOS
+// ===============================
+router.get(
+  "/laboratorios",
+  verificarSesion,
+  soloRol(["MANTENIMIENTO", "TECNICO"]),
+  async (req, res) => {
+    try {
+      const db = req.db.promise();
+
+      const [labs] = await db.query(`
+        SELECT id, nombre
+        FROM zonas
+        ORDER BY nombre
+      `);
+
+      res.json(labs);
+
+    } catch (err) {
+      console.error("❌ Error cargando laboratorios:", err);
+      res.status(500).json([]);
+    }
+  }
+);
+
+router.get("/resumen-hoy", async (req, res) => {
+  try {
+    const db = req.db.promise();
+
+    const [rows] = await db.query(`
+      SELECT
+        SUM(estado = 'PENDIENTE') AS pendientes,
+        SUM(estado = 'RESUELTA') AS resueltas
+      FROM soporte_personal
+    `);
+
+    res.json({
+      pendientes: rows[0].pendientes || 0,
+      resueltas: rows[0].resueltas || 0
+    });
+
+  } catch (err) {
+    console.error("❌ Error resumen:", err);
+    res.json({ pendientes: 0, resueltas: 0 });
+  }
+});
 
 
 module.exports = router;

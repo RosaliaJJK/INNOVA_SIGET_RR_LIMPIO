@@ -285,4 +285,84 @@ router.get("/api/registros-activos", verificarSesion, soloRol(["DOCENTE"]), (req
   );
 });
 
+// ===============================
+// BITÁCORAS POR LABORATORIO Y FECHA
+// ===============================
+router.get(
+  "/bitacoras",
+  verificarSesion,
+  soloRol(["DOCENTE", "MANTENIMIENTO", "TECNICO"]),
+  async (req, res) => {
+
+    const { laboratorio, fecha } = req.query;
+
+    if (!laboratorio || !fecha) {
+      return res.status(400).json([]);
+    }
+
+    try {
+      const db = req.db.promise();
+
+      const [rows] = await db.query(`
+        SELECT
+          u.nombre AS alumno,
+          r.hora_entrada,
+          r.hora_salida,
+          r.observaciones
+        FROM registros r
+        INNER JOIN usuarios u ON r.id_alumno = u.id
+        INNER JOIN clases c ON r.id_clase = c.id
+        WHERE c.id_zona = ?
+          AND DATE(c.fecha) = ?
+        ORDER BY r.hora_entrada
+      `, [laboratorio, fecha]);
+
+      res.json(rows);
+
+    } catch (err) {
+      console.error("❌ Error bitácoras:", err);
+      res.status(500).json([]);
+    }
+  }
+);
+
+router.post("/actualizar-hora", verificarSesion, async (req, res) => {
+  const db = req.db.promise();
+  const idDocente = req.session.user.id;
+  const { hora_inicio, hora_fin } = req.body;
+
+  if (!hora_inicio || !hora_fin) {
+    return res.status(400).json({ error: "Horas requeridas" });
+  }
+
+  const [result] = await db.query(
+    `
+    UPDATE clases
+    SET hora_inicio = ?, hora_fin = ?
+    WHERE id_docente = ?
+      AND hora_fin IS NULL
+    `,
+    [hora_inicio, hora_fin, idDocente]
+  );
+
+  if (result.affectedRows === 0) {
+    return res.json({
+      ok: false,
+      message: "No hay bitácora activa para actualizar"
+    });
+  }
+
+  res.json({
+    ok: true,
+    message: "Horario actualizado correctamente"
+  });
+});
+
+// routes/docente.js
+router.get("/solicitud", verificarSesion, (req, res) => {
+    res.render("docente_solicitud", {
+        user: req.session.user
+    });
+});
+
 module.exports = router;

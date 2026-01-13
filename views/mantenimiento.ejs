@@ -229,13 +229,33 @@
             width: 90%;
             max-width: 700px;
         }
+
+        .selected {
+            background-color: #d0ebff;
+        }
+
+        /* ===== DISPONIBILIDAD SOPORTE ===== */
+        .configuration-panel form {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .configuration-panel label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            background: #f8fafc;
+            padding: 8px 10px;
+            border-radius: 8px;
+        }
+
     </style>
 </head>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
-    <script src="/js/mantenimiento.js"></script>
-
 
 <body>
 
@@ -256,14 +276,13 @@
             </button>
 
             <div class="dropdown-content" id="settingsMenu">
-                <button onclick="navAction('reportar')">
+                <button onclick="location.href='/reportar-problema'">
                     <i class="fa-solid fa-triangle-exclamation"></i>
-                    Reportar Problema
+                    <span>Reportar Problema</span>
                 </button>
-
-                <button onclick="navAction('estado')">
+                <button onclick="location.href='/personal/estado-sistema'">
                     <i class="fa-solid fa-circle-info"></i>
-                    Estado del Sistema
+                    <span>Estado del Sistema</span>
                 </button>
                 
                 <hr>
@@ -311,11 +330,11 @@
 
             <div class="inline-fields" style="margin-bottom:15px;">
                 <button class="btn btn-primary" onclick="loadData()">
-                    <i class="fas fa-sync-alt"></i> Actualizar
+                    <i class="fas fa-sync-alt"></i> Actualizar Tabla
                 </button>
                 
                 <button class="btn btn-danger" id="btnEliminar">
-                    <i class="fas fa-trash-alt"></i> Eliminar
+                <i class="fas fa-trash-alt"></i> Eliminar
                 </button>
 
                 <!-- BOTÓN AGREGADO -->
@@ -381,16 +400,17 @@
 
             <h3 class="panel-header">Configurar Disponibilidad</h3>
 
-                <form action="/mantenimiento/disponibilidad" method="POST">
-
-                <label>Día</label>
-                <input type="date" name="dia" required>
+            <form action="/mantenimiento/disponibilidad" method="POST">
                 
+                <label><input type="checkbox" name="dias[]" value="LUNES"> Lunes</label>
+                <label><input type="checkbox" name="dias[]" value="MARTES"> Martes</label>
+                <label><input type="checkbox" name="dias[]" value="MIERCOLES"> Miércoles</label>
+                <label><input type="checkbox" name="dias[]" value="JUEVES"> Jueves</label>
+                <label><input type="checkbox" name="dias[]" value="VIERNES"> Viernes</label>
+      
                 <button class="btn btn-primary" style="margin-top:10px;">
-                    Publicar Horario
+                    Publicar disponibilidad
                 </button>
-            </form>
-
             </form>
 
             <h3 class="panel-header" style="margin-top:25px;">
@@ -410,8 +430,6 @@
             <button class="btn btn-secondary" onclick="actualizarEstadoDesdePanel()">
                 Actualizar Estado
             </button>
-
-
         </aside>
 
     </div>
@@ -423,19 +441,18 @@
         <h3>📒 Bitácoras de Alumnos</h3>
 
         <label>Laboratorio</label>
-        <select>
-            <option>Laboratorio 1</option>
-            <option>Laboratorio 2</option>
+        <select id="laboratorio" required>
+        <option value="">Seleccione laboratorio</option>
         </select>
 
         <label>Fecha</label>
-        <input type="date">
+        <input type="date" id="fecha">
 
-        <button class="btn btn-secondary" style="margin-top:10px;">
-            Consultar Bitácoras
+        <button id="btnConsultar" class="btn btn-secondary" style="margin-top:10px;">
+        Consultar Bitácoras
         </button>
 
-        <table style="margin-top:15px;">
+        <table>
             <thead>
                 <tr>
                     <th>Alumno</th>
@@ -443,11 +460,9 @@
                     <th>Salida</th>
                     <th>Actividad</th>
                 </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td colspan="4" style="text-align:center;">Sin datos</td>
-                </tr>
+                </thead>
+                    <tbody id="tablaBitacoras">
+                <tr><td colspan="4">Sin datos</td></tr>
             </tbody>
         </table>
 
@@ -457,39 +472,45 @@
     </div>
 </div>
 
-<script>
-    const cogButton = document.getElementById("cogButton");
-    const menu = document.getElementById("settingsMenu");
+    <script>
+        const cogButton = document.getElementById("cogButton");
+        const menu = document.getElementById("settingsMenu");
 
-    cogButton.onclick = (e) => {
-        e.stopPropagation();
-        menu.style.display = menu.style.display === "block" ? "none" : "block";
-    };
+        cogButton.onclick = (e) => {
+            e.stopPropagation();
+            menu.style.display = menu.style.display === "block" ? "none" : "block";
+        };
 
-    document.onclick = () => menu.style.display = "none";
+        document.onclick = () => menu.style.display = "none";
 
-    function navAction(action) {
-        menu.style.display = "none";
-        console.log("Acción:", action);
-    }
+        function navAction(action) {
+            menu.style.display = "none";
+            console.log("Acción:", action);
+        }
 
-    function loadData() {
-        console.log("Conectando con el servidor...");
-    }
+        function loadData() {
+            console.log("Conectando con el servidor...");
+        }
 
-    /* ===== FUNCIONES AGREGADAS ===== */
-    function openBitacoras() {
-        document.getElementById("bitacoraModal").style.display = "flex";
-    }
+        /* ===== FUNCIONES AGREGADAS ===== */
+        function openBitacoras() {
+            document.getElementById("bitacoraModal").style.display = "flex";
+        }
 
-    function closeBitacoras() {
-        document.getElementById("bitacoraModal").style.display = "none";
-    }
-    function loadData() {
-    cargarIncidencias();
-    }
+        function closeBitacoras() {
+            document.getElementById("bitacoraModal").style.display = "none";
+        }
+        function loadData() {
+        cargarIncidencias();
+        }
 
-</script>
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/mantenimiento.js"></script>
+    <script src="/js/bitacoras.js"></script>
+
 
 </body>
 </html>

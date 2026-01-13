@@ -17,6 +17,23 @@ socket.on("incidencia_actualizada", () => {
   cargarIncidencias(); // refresca la tabla
 });
 
+socket.on("resumen_actualizado", () => {
+  console.log("📊 Resumen actualizado en tiempo real");
+  cargarResumen();
+});
+
+/* ==========================
+   RESUMEN DE HOY
+========================== */
+function cargarResumen() {
+  fetch("/mantenimiento/resumen-hoy")
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById("pendientes").textContent = data.pendientes ?? 0;
+      document.getElementById("resueltas").textContent = data.resueltas ?? 0;
+    });
+}
+
 /* ==========================
    CARGAR INCIDENCIAS
 ========================== */
@@ -43,7 +60,7 @@ function cargarIncidencias() {
 
       data.forEach(i => {
         tbody.innerHTML += `
-          <tr data-id="${i.id}">
+          <tr data-id="${i.id}" onclick="seleccionarFila(this)">
             <td><input type="radio" name="seleccion"></td>
             <td>${i.id}</td>
             <td>${i.solicitante}</td>
@@ -67,20 +84,22 @@ function cargarIncidencias() {
    ELIMINAR INCIDENCIA
 ========================== */
 document.getElementById("btnEliminar").addEventListener("click", async () => {
-  const fila = document.querySelector('input[name="seleccion"]:checked')?.closest("tr");
 
-  if (!fila) {
+  if (!filaSeleccionada) {
     alert("Selecciona una incidencia");
     return;
   }
 
-  const id = fila.dataset.id;
+  const id = filaSeleccionada.dataset.id;
 
   if (!confirm("¿Eliminar incidencia?")) return;
 
   await fetch(`/mantenimiento/${id}`, { method: "DELETE" });
+
+  filaSeleccionada = null;
   cargarIncidencias();
 });
+
 
 /* ==========================
    INIT
@@ -103,17 +122,6 @@ function actualizarEstado(id, estado) {
   });
 }
 
-/* ==========================
-   RESUMEN DE HOY
-========================== */
-function cargarResumen() {
-  fetch("/mantenimiento/resumen-hoy")
-    .then(res => res.json())
-    .then(data => {
-      document.getElementById("pendientes").textContent = data.pendientes ?? 0;
-      document.getElementById("resueltas").textContent = data.resueltas ?? 0;
-    });
-}
 
 /* ==========================
    PDF
@@ -151,3 +159,26 @@ function actualizarEstadoDesdePanel() {
     cargarIncidencias();
   });
 }
+
+
+let filaSeleccionada = null;
+
+function seleccionarFila(tr) {
+  document.querySelectorAll("#incidencesTable tr")
+    .forEach(f => f.classList.remove("selected"));
+
+  tr.classList.add("selected");
+  filaSeleccionada = tr;
+}
+
+
+
+/*function cargarResumen() {
+  fetch("/mantenimiento/resumen-hoy")
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById("pendientes").textContent = data.pendientes;
+      document.getElementById("resueltas").textContent = data.resueltas;
+    });
+}*/
+cargarResumen();
